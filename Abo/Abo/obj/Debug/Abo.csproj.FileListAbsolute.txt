@@ -1,0 +1,18 @@
+D:\ischool desktop\addmodules\Application1\Abo.dll
+D:\ischool desktop\addmodules\Application1\Abo.pdb
+D:\GitHub2\PJ5\Abo\Abo\bin\Debug\Abo.dll
+D:\GitHub2\PJ5\Abo\Abo\bin\Debug\Abo.pdb
+D:\GitHub2\PJ5\Abo\Abo\obj\Debug\Abo.csprojResolveAssemblyReference.cache
+D:\GitHub2\PJ5\Abo\Abo\obj\Debug\Abo.Form1.resources
+D:\GitHub2\PJ5\Abo\Abo\obj\Debug\Abo.Properties.Resources.resources
+D:\GitHub2\PJ5\Abo\Abo\obj\Debug\Abo.csproj.GenerateResource.Cache
+D:\GitHub2\PJ5\Abo\Abo\obj\Debug\Abo.dll
+D:\GitHub2\PJ5\Abo\Abo\obj\Debug\Abo.pdb
+D:\GitHub2\OfficialStatisticReport\Abo\Abo\bin\Debug\Abo.dll
+D:\GitHub2\OfficialStatisticReport\Abo\Abo\bin\Debug\Abo.pdb
+D:\GitHub2\OfficialStatisticReport\Abo\Abo\obj\Debug\Abo.csprojResolveAssemblyReference.cache
+D:\GitHub2\OfficialStatisticReport\Abo\Abo\obj\Debug\Abo.Form1.resources
+D:\GitHub2\OfficialStatisticReport\Abo\Abo\obj\Debug\Abo.Properties.Resources.resources
+D:\GitHub2\OfficialStatisticReport\Abo\Abo\obj\Debug\Abo.csproj.GenerateResource.Cache
+D:\GitHub2\OfficialStatisticReport\Abo\Abo\obj\Debug\Abo.dll
+D:\GitHub2\OfficialStatisticReport\Abo\Abo\obj\Debug\Abo.pdb

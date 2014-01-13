@@ -1,0 +1,8 @@
+D:\GitHub2\OfficialStatisticReport\ForeignStudent\ForeignStudent\obj\Debug\ForeignStudent.Form1.resources
+D:\GitHub2\OfficialStatisticReport\ForeignStudent\ForeignStudent\obj\Debug\ForeignStudent.Properties.Resources.resources
+D:\GitHub2\OfficialStatisticReport\ForeignStudent\ForeignStudent\obj\Debug\ForeignStudent.csproj.GenerateResource.Cache
+D:\GitHub2\OfficialStatisticReport\ForeignStudent\ForeignStudent\bin\Debug\ForeignStudent.dll
+D:\GitHub2\OfficialStatisticReport\ForeignStudent\ForeignStudent\bin\Debug\ForeignStudent.pdb
+D:\GitHub2\OfficialStatisticReport\ForeignStudent\ForeignStudent\obj\Debug\ForeignStudent.dll
+D:\GitHub2\OfficialStatisticReport\ForeignStudent\ForeignStudent\obj\Debug\ForeignStudent.pdb
+D:\GitHub2\OfficialStatisticReport\ForeignStudent\ForeignStudent\obj\Debug\ForeignStudent.csprojResolveAssemblyReference.cache

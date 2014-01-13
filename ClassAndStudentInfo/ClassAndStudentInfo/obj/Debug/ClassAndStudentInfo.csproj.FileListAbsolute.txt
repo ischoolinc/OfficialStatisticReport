@@ -1,0 +1,9 @@
+D:\GitHub2\Documents and Settings\Dylan.Huang\桌面\ischool desktop\addmodules\20131113\ClassAndStudentInfo.dll
+D:\GitHub2\Documents and Settings\Dylan.Huang\桌面\ischool desktop\addmodules\20131113\ClassAndStudentInfo.pdb
+D:\GitHub2\PJ3\ClassAndStudentInfo-master\ClassAndStudentInfo\obj\Debug\ClassAndStudentInfo.csprojResolveAssemblyReference.cache
+D:\GitHub2\PJ3\ClassAndStudentInfo-master\ClassAndStudentInfo\obj\Debug\ClassAndStudentInfo.Properties.Resources.resources
+D:\GitHub2\PJ3\ClassAndStudentInfo-master\ClassAndStudentInfo\obj\Debug\ClassAndStudentInfo.csproj.GenerateResource.Cache
+D:\GitHub2\PJ3\ClassAndStudentInfo-master\ClassAndStudentInfo\obj\Debug\ClassAndStudentInfo.dll
+D:\GitHub2\PJ3\ClassAndStudentInfo-master\ClassAndStudentInfo\obj\Debug\ClassAndStudentInfo.pdb
+D:\ischool desktop\addmodules\Application1\ClassAndStudentInfo.dll
+D:\ischool desktop\addmodules\Application1\ClassAndStudentInfo.pdb

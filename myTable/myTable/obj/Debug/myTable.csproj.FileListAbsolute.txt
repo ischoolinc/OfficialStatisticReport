@@ -1,0 +1,15 @@
+D:\ischool desktop\addmodules\Application1\myTable.dll
+D:\ischool desktop\addmodules\Application1\myTable.pdb
+c:\users\cloud\documents\visual studio 2013\Projects\myTable\myTable\obj\Debug\myTable.csprojResolveAssemblyReference.cache
+c:\users\cloud\documents\visual studio 2013\Projects\myTable\myTable\obj\Debug\myTable.Form1.resources
+c:\users\cloud\documents\visual studio 2013\Projects\myTable\myTable\obj\Debug\myTable.csproj.GenerateResource.Cache
+c:\users\cloud\documents\visual studio 2013\Projects\myTable\myTable\obj\Debug\myTable.dll
+c:\users\cloud\documents\visual studio 2013\Projects\myTable\myTable\obj\Debug\myTable.pdb
+C:\Users\Cloud\Documents\Visual Studio 2013\Projects\myTable\myTable\obj\Debug\myTable.Form2.resources
+C:\Users\Cloud\Documents\Visual Studio 2013\Projects\myTable\myTable\obj\Debug\myTable.Properties.Resources.resources
+D:\GitHub2\PJ2\myTable\myTable\obj\Debug\myTable.csprojResolveAssemblyReference.cache
+D:\GitHub2\PJ2\myTable\myTable\obj\Debug\myTable.Form2.resources
+D:\GitHub2\PJ2\myTable\myTable\obj\Debug\myTable.Properties.Resources.resources
+D:\GitHub2\PJ2\myTable\myTable\obj\Debug\myTable.csproj.GenerateResource.Cache
+D:\GitHub2\PJ2\myTable\myTable\obj\Debug\myTable.dll
+D:\GitHub2\PJ2\myTable\myTable\obj\Debug\myTable.pdb
