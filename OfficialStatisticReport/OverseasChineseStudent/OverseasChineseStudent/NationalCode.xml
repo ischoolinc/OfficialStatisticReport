@@ -1,0 +1,229 @@
+﻿<ItemList>
+<Item Code="0" CH="中華民國" EN="R.O.C" />
+<Item Code="1" CH="阿富汗" EN="AFGHANISTAN" />
+<Item Code="2" CH="巴林" EN="BAHRAIN" />
+<Item Code="3" CH="孟加拉" EN="BANGLADESH" />
+<Item Code="4" CH="不丹" EN="BHUTAN" />
+<Item Code="5" CH="緬甸" EN="BURMA" />
+<Item Code="6" CH="柬埔寨" EN="CAMBODIA" />
+<Item Code="7" CH="賽浦勒斯" EN="CYPRUS" />
+<Item Code="8" CH="印度" EN="INDIA" />
+<Item Code="9" CH="印尼" EN="INDONESIA" />
+<Item Code="10" CH="伊朗" EN="IRAN" />
+<Item Code="11" CH="伊拉克" EN="IRAQ" />
+<Item Code="12" CH="以色列" EN="ISRAEL" />
+<Item Code="13" CH="日本" EN="JAPAN" />
+<Item Code="14" CH="約旦" EN="JORDAN" />
+<Item Code="15" CH="南韓" EN="R.O. KOREA" />
+<Item Code="16" CH="科威特" EN="KUWAIT" />
+<Item Code="17" CH="寮國" EN="LAOS" />
+<Item Code="18" CH="黎巴嫩" EN="LEBANON" />
+<Item Code="19" CH="馬來西亞" EN="MALAYSIA" />
+<Item Code="20" CH="馬爾地夫" EN="MALDIVES" />
+<Item Code="21" CH="尼泊爾" EN="NEPAL" />
+<Item Code="22" CH="阿曼" EN="OMAN" />
+<Item Code="23" CH="巴基斯坦" EN="PAKISTAN" />
+<Item Code="24" CH="菲律賓" EN="PHILIPPINES" />
+<Item Code="25" CH="卡達" EN="QATAR" />
+<Item Code="26" CH="沙烏地阿拉伯" EN="SAUDI ARABIA" />
+<Item Code="27" CH="新加坡" EN="SINGAPORE" />
+<Item Code="28" CH="斯里蘭卡" EN="SRI LANKA" />
+<Item Code="29" CH="敘利亞" EN="SYRIAN ARAB R." />
+<Item Code="30" CH="泰國" EN="THILAND" />
+<Item Code="31" CH="土耳其" EN="TURKEY" />
+<Item Code="32" CH="阿拉伯聯合大公國" EN="UNITED ARAB" />
+<Item Code="33" CH="越南" EN="VIETNAM" />
+<Item Code="34" CH="北葉門" EN="YEMAN ARAB R." />
+<Item Code="35" CH="葉門" EN="YEMAN" />
+<Item Code="36" CH="東帝汶" EN="EAST TIMOR" />
+<Item Code="37" CH="英屬印度洋地區" EN="BIOT" />
+<Item Code="38" CH="喀什米爾" EN="KASHMIR" />
+<Item Code="39" CH="荷屬印度邦加島" EN="" />
+<Item Code="40" CH="琉球" EN="OKINAWA" />
+<Item Code="41" CH="紐埃" EN="NIUE" />
+<Item Code="50" CH="汶萊" EN="BRUNEI" />
+<Item Code="60" CH="香港" EN="HONG KONG" />
+<Item Code="70" CH="澳門" EN="MACAO" />
+<Item Code="71" CH="巴勒斯坦" EN="PALESTINE　" />
+<Item Code="72" CH="蒙古" EN="MONGO" />
+<Item Code="73" CH="俄羅斯" EN="RUSSIA" />
+<Item Code="74" CH="喬治亞" EN="GEORGIA" />
+<Item Code="75" CH="哈薩克" EN="KAZAKHSTAN" />
+<Item Code="76" CH="吉爾吉斯" EN="KIRGIZSTAN" />
+<Item Code="77" CH="烏茲別克" EN="UZBEKSTAN" />
+<Item Code="78" CH="亞美尼亞" EN="ARMENIA" />
+<Item Code="79" CH="塔吉克" EN="TAJIKISTAN" />
+<Item Code="80" CH="土庫曼" EN="TURKMENISTAN" />
+<Item Code="81" CH="亞塞拜然" EN="AZERBAIJAN" />
+<Item Code="82" CH="摩爾多瓦" EN="MOLDOVA" />
+<Item Code="83" CH="杜瓦" EN="TUVA" />
+<Item Code="98" CH="亞洲其他國家" EN="" />
+<Item Code="99" CH="獨立國協" EN="C.I.S." />
+<Item Code="A00" CH="中國大陸" EN="MAINLAND CHINA" />
+<Item Code="A02" CH="錫金" EN="SIKKIM" />
+<Item Code="101" CH="澳大利亞" EN="AUSTRALIA" />
+<Item Code="102" CH="斐濟" EN="FIJI" />
+<Item Code="103" CH="諾魯" EN="NAURU" />
+<Item Code="104" CH="紐西蘭" EN="NEW ZEALAND" />
+<Item Code="105" CH="巴布亞紐幾內亞" EN="POPUA N. G." />
+<Item Code="106" CH="東加" EN="TONGA" />
+<Item Code="107" CH="西薩摩亞" EN="W. SAMOA" />
+<Item Code="108" CH="法屬大溪地" EN="TAHITI" />
+<Item Code="109" CH="三托島" EN="SANTO ISLAND" />
+<Item Code="110" CH="萬那杜" EN="VANUATU" />
+<Item Code="111" CH="索羅門群島" EN="SOLOMON ISLAND" />
+<Item Code="112" CH="帛琉" EN="PALAU ISLAND" />
+<Item Code="113" CH="馬紹爾群島共和國" EN="MARSHALL ISLANDS" />
+<Item Code="114" CH="法屬鈕加列多尼亞" EN="NEW CALEDONIA" />
+<Item Code="115" CH="吐瓦魯" EN="TUVALU" />
+<Item Code="116" CH="薩摩亞" EN="SAMOA" />
+<Item Code="117" CH="密克羅尼西亞" EN="MICRONESIA" />
+<Item Code="118" CH="關島" EN="GUAM" />
+<Item Code="119" CH="賽班島" EN="SAIPAN MARIANA ISLAND" />
+<Item Code="121" CH="吉里巴斯" EN="R.O.KIRIBATI　" />
+<Item Code="201" CH="阿爾及利亞" EN="ALGERIA" />
+<Item Code="202" CH="安哥拉" EN="ANGOLA" />
+<Item Code="203" CH="貝南" EN="BENIN" />
+<Item Code="204" CH="波札那" EN="BOTSWANA" />
+<Item Code="205" CH="蒲隆地" EN="BURUNDI" />
+<Item Code="206" CH="喀麥隆" EN="CAMEROUN" />
+<Item Code="207" CH="維德角" EN="CAPE VERDE " />
+<Item Code="208" CH="中菲" EN="C. AFRICAN. R" />
+<Item Code="209" CH="查德" EN="CHAD" />
+<Item Code="210" CH="葛摩聯盟" EN="UNION OF COMOROS" />
+<Item Code="211" CH="剛果" EN="CONGO" />
+<Item Code="212" CH="吉布地" EN="DJIBOUTI" />
+<Item Code="213" CH="埃及" EN="EGYPT" />
+<Item Code="214" CH="赤道幾內亞" EN="EQUATORIAL GUINEA" />
+<Item Code="215" CH="衣索匹亞" EN="ETHIOPIA" />
+<Item Code="216" CH="加彭" EN="GABON" />
+<Item Code="217" CH="甘比亞" EN="GAMBIA" />
+<Item Code="218" CH="迦納" EN="GHANA" />
+<Item Code="219" CH="幾內亞" EN="GUINEA" />
+<Item Code="220" CH="幾內亞比索" EN="GUINEA BISSAN" />
+<Item Code="221" CH="象牙海岸" EN="IVORY COAST" />
+<Item Code="222" CH="肯亞" EN="KENYA" />
+<Item Code="223" CH="賴索托" EN="LESOTHO" />
+<Item Code="224" CH="賴比瑞亞" EN="LIBERIA" />
+<Item Code="225" CH="利比亞" EN="LIBYA" />
+<Item Code="226" CH="馬達加斯加" EN="MADAGASCAR" />
+<Item Code="227" CH="馬拉威" EN="MALAWI" />
+<Item Code="228" CH="馬利" EN="MALI" />
+<Item Code="229" CH="茅利塔尼亞" EN="MANRITANIA" />
+<Item Code="230" CH="模里西斯" EN="MAURITIUS" />
+<Item Code="231" CH="摩洛哥" EN="MOROCCO" />
+<Item Code="232" CH="莫三比克" EN="MOZAMBIQUE" />
+<Item Code="233" CH="尼日" EN="NIGER" />
+<Item Code="234" CH="奈及利亞" EN="NIGERIA" />
+<Item Code="235" CH="盧安達" EN="RWANDA" />
+<Item Code="236" CH="聖多美普林西比" EN="SAO TOME , PRINCIPE" />
+<Item Code="237" CH="塞內加爾" EN="SENEGAL" />
+<Item Code="238" CH="塞席爾" EN="SEYCHELLES" />
+<Item Code="239" CH="獅子山共和國" EN="SIERRA LEONE" />
+<Item Code="240" CH="索馬利亞民主共和國" EN="SOMALIA DEMOCRATIC  R. " />
+<Item Code="241" CH="南非" EN="SOUTH AFRICA" />
+<Item Code="242" CH="蘇丹" EN="SUDAN" />
+<Item Code="243" CH="史瓦濟蘭" EN="SWAZILAND" />
+<Item Code="244" CH="坦尚尼亞" EN="TANZANIA" />
+<Item Code="245" CH="多哥" EN="TOGO" />
+<Item Code="246" CH="特蘭斯凱" EN="TRANSKEI" />
+<Item Code="247" CH="突尼西亞" EN="TUNISIA" />
+<Item Code="248" CH="烏干達" EN="UGANDA" />
+<Item Code="249" CH="上伏塔" EN="UPPER VOETA" />
+<Item Code="250" CH="剛果民主共和國" EN="D. R.O.THE CONGO" />
+<Item Code="251" CH="尚比亞" EN="ZAMBIA" />
+<Item Code="252" CH="留尼旺" EN="REUNION" />
+<Item Code="253" CH="辛巴威" EN="ZIMBABWE" />
+<Item Code="254" CH="波布那" EN="BOPHUTHATSWANA" />
+<Item Code="255" CH="布吉那法索" EN="BURKINA FASO　" />
+<Item Code="256" CH="納米比亞" EN="NAMIBIA　" />
+<Item Code="258" CH="南蘇丹共和國" EN="SOUTH SUDAN" />
+<Item Code="301" CH="阿爾巴尼亞" EN="ALBANIA" />
+<Item Code="302" CH="安道爾" EN="ANDORRA" />
+<Item Code="303" CH="奧地利" EN="AUSTRIA" />
+<Item Code="304" CH="比利時" EN="BELGIUM" />
+<Item Code="305" CH="保加利亞" EN="BULGARIA" />
+<Item Code="306" CH="捷克" EN="CZECH REPUBLIC" />
+<Item Code="307" CH="丹麥" EN="DENMARK" />
+<Item Code="309" CH="芬蘭" EN="FINLAND" />
+<Item Code="310" CH="法國" EN="FRANCE" />
+<Item Code="311" CH="希臘" EN="GREECE" />
+<Item Code="312" CH="教廷" EN="HOLY SEE" />
+<Item Code="313" CH="匈牙利" EN="HUNGARY" />
+<Item Code="314" CH="冰島" EN="ICELAND" />
+<Item Code="315" CH="愛爾蘭" EN="IRELAND" />
+<Item Code="316" CH="義大利" EN="ITALY" />
+<Item Code="317" CH="列支敦斯登" EN="LIECHTENSTEIN" />
+<Item Code="318" CH="盧森堡" EN="LUXEMBOURG" />
+<Item Code="319" CH="馬爾他" EN="MALTA" />
+<Item Code="320" CH="摩納哥" EN="MONACO" />
+<Item Code="321" CH="荷蘭" EN="NETHERLANDS" />
+<Item Code="322" CH="挪威" EN="NORWAY" />
+<Item Code="323" CH="波蘭" EN="POLAND" />
+<Item Code="324" CH="葡萄牙" EN="PORTUGAL" />
+<Item Code="325" CH="羅馬尼亞" EN="ROMANIA" />
+<Item Code="326" CH="聖馬利諾" EN="SAN MARINO" />
+<Item Code="327" CH="西班牙" EN="SPAIN" />
+<Item Code="328" CH="瑞典" EN="SWEDEN" />
+<Item Code="329" CH="瑞士" EN="SWITZERLAND" />
+<Item Code="330" CH="英國" EN="UNITED KINGDOM" />
+<Item Code="331" CH="蘇聯" EN="U.S.S.R　" />
+<Item Code="332" CH="德國" EN="GERMANY" />
+<Item Code="333" CH="南斯拉夫" EN="YUGOSLAVIA" />
+<Item Code="334" CH="克羅埃西亞" EN="CROATIA" />
+<Item Code="344" CH="愛沙尼亞" EN="ESTONIA" />
+<Item Code="348" CH="拉脫維亞" EN="LATVIA　" />
+<Item Code="349" CH="立陶宛" EN="LITHUANIA　" />
+<Item Code="350" CH="烏克蘭" EN="UKRAINE" />
+<Item Code="351" CH="白俄羅斯" EN="BELARUS" />
+<Item Code="360" CH="斯洛伐克" EN="SLOVAKIA　" />
+<Item Code="361" CH="斯洛維尼亞" EN="SLOVENIA　" />
+<Item Code="362" CH="馬其頓" EN="MACEDONIA　" />
+<Item Code="363" CH="塞爾維亞共和國" EN="THE R. OF SERBIA" />
+<Item Code="401" CH="巴哈馬" EN="BAHAMAS" />
+<Item Code="402" CH="巴貝多" EN="BARBADOS" />
+<Item Code="403" CH="加拿大" EN="CANADA" />
+<Item Code="404" CH="哥斯大黎加" EN="COSTA RICA" />
+<Item Code="405" CH="古巴" EN="CUBA" />
+<Item Code="406" CH="多明尼加" EN="DOMINICA" />
+<Item Code="407" CH="薩爾瓦多" EN="EL SALVADOR" />
+<Item Code="408" CH="格瑞那達" EN="GRENADA" />
+<Item Code="409" CH="瓜地馬拉" EN="GUATEMALA" />
+<Item Code="410" CH="海地" EN="HAITI" />
+<Item Code="411" CH="宏都拉斯" EN="HONDURAS" />
+<Item Code="412" CH="牙買加" EN="JAMAICA" />
+<Item Code="413" CH="墨西哥" EN="MEXICO" />
+<Item Code="414" CH="尼加拉瓜" EN="NICARAGUA" />
+<Item Code="415" CH="巴拿馬" EN="PANAMA" />
+<Item Code="416" CH="千里達" EN="TRINIDAD" />
+<Item Code="417" CH="百慕達" EN="BERMUDAS" />
+<Item Code="418" CH="貝里斯" EN="BELIZE" />
+<Item Code="419" CH="安地卡" EN="ANTIQUA , BARBUDA" />
+<Item Code="420" CH="聖文森" EN="ST. VINCENT" />
+<Item Code="422" CH="背風群島" EN="LEEWARD ISLANDS" />
+<Item Code="423" CH="波多黎各" EN="PUERTO RICO" />
+<Item Code="424" CH="維京群島" EN="VIRGIN ISLANDS" />
+<Item Code="425" CH="美國" EN="UNITED STATES OF AMERICA" />
+<Item Code="426" CH="多米尼克" EN="DOMINICA" />
+<Item Code="427" CH="聖露西亞" EN="ST. LUCIA" />
+<Item Code="501" CH="阿根廷" EN="ARGENTINA" />
+<Item Code="502" CH="玻利維亞" EN="BOLIVIA" />
+<Item Code="503" CH="巴西" EN="BRAZIL" />
+<Item Code="504" CH="智利" EN="CHILE" />
+<Item Code="505" CH="哥倫比亞" EN="COLOMBIA" />
+<Item Code="506" CH="厄瓜多" EN="ECUADOR" />
+<Item Code="507" CH="蓋亞那" EN="GUYANA" />
+<Item Code="508" CH="巴拉圭" EN="PARAGUAY" />
+<Item Code="509" CH="秘魯" EN="PERU" />
+<Item Code="510" CH="蘇利南" EN="SURINAM" />
+<Item Code="511" CH="烏拉圭" EN="URUGUAY" />
+<Item Code="512" CH="委內瑞拉" EN="VENEZUELA" />
+<Item Code="513" CH="庫拉索" EN="CURACAO" />
+<Item Code="514" CH="阿魯巴" EN="ARUBA ISLAND" />
+<Item Code="515" CH="法屬聖馬丁島" EN="ST. MARTIN ISLAND" />
+<Item Code="516" CH="荷屬聖馬丁島" EN="ST. MARTIN ISLAND" />
+<Item Code="518" CH="荷屬波納爾" EN="" />
+<Item Code="519" CH="聖湯姆斯" EN="ST.THOMAS (U.S.A.)" />
+<Item Code="520" CH="聖克利斯多福" EN="ST. CHRISTOPHER , NEVIS" />
+<Item Code="999" CH="其他" EN="OTHERS" />
+  </ItemList>
