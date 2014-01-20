@@ -107,18 +107,6 @@ namespace OverseasChineseStudent
                     dataGridViewX1.Rows.Add(row);
                 }
             }
-            else
-            {
-                //UDT無資料則提供預設標記
-                for (int i = 0; i < Column1.Items.Count; i++)
-                {
-                    row = new DataGridViewRow();
-                    row.CreateCells(dataGridViewX1);
-                    row.Cells[0].Value = Column1.Items[i];
-                    dataGridViewX1.Rows.Add(row);
-                }
-            }
-
         }
 
         private void buttonX1_Click(object sender, EventArgs e)
