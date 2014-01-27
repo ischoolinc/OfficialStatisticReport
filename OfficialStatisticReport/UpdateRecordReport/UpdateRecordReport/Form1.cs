@@ -23,10 +23,17 @@ namespace UpdateRecordReport
         int _SchoolYear, _Semester;
 
         //學生物件清單
-        List<Studentobj> _CleanList, _ErrorList;
+        List<RecordObj> _CleanList, _ErrorList;
 
         //異動代碼對照表
-        Dictionary<string, string> _UpdateCode;
+        Dictionary<string, string> _QueryUpdateCodes;
+
+        //Column2預設選項
+        Dictionary<string, string> _UpdateItems;
+        //Column1預設選項
+        Dictionary<string, List<string>> _DefaultItem;
+        //MappingTable
+        Dictionary<string, List<string>> _MappingData;
 
         //背景模式
         BackgroundWorker _BGW;
@@ -35,13 +42,7 @@ namespace UpdateRecordReport
         Workbook _WK;
 
         //各科別清單
-        List<Studentobj> 普通科, 綜合高中科, 職業科;
-
-        //MappingTable
-        Dictionary<string, List<string>> _MappingData;
-
-        //Cloumn1預設選項
-        List<string> _DefaultItem;
+        List<RecordObj> 普通科, 綜合高中科, 職業科;
 
         public Form1()
         {
@@ -72,13 +73,13 @@ namespace UpdateRecordReport
             cboSemester.Text = semester.ToString();
 
             //Column1選單
-            foreach (string s in _DefaultItem)
+            foreach (string s in _DefaultItem.Keys)
             {
                 this.Column1.Items.Add(s);
             }
 
             //Column2選單
-            foreach (string s in _UpdateCode.Keys)
+            foreach (string s in _UpdateItems.Keys)
             {
                 this.Column2.Items.Add(s);
             }
@@ -95,36 +96,36 @@ namespace UpdateRecordReport
         private void SetData()
         {
             #region Column1選單項目
-            _DefaultItem = new List<string>();
-            _DefaultItem.Add("轉出:遷居");
-            _DefaultItem.Add("轉出:家長調職");
-            _DefaultItem.Add("轉出:改變環境");
-            _DefaultItem.Add("轉出:輔導轉學");
-            _DefaultItem.Add("轉出:其他");
+            _DefaultItem = new Dictionary<string, List<string>>();
+            _DefaultItem.Add("轉出:遷居",new List<string>(new string[]{"311"}));
+            _DefaultItem.Add("轉出:家長調職", new List<string>(new string[] { "312" }));
+            _DefaultItem.Add("轉出:改變環境", new List<string>(new string[] { "313" }));
+            _DefaultItem.Add("轉出:輔導轉學", new List<string>(new string[] { "315" }));
+            _DefaultItem.Add("轉出:其他", new List<string>(new string[] { "314","316" }));
 
-            _DefaultItem.Add("退學:自動退學");
-            _DefaultItem.Add("退學:休學期滿");
-            _DefaultItem.Add("退學:未達畢業標準");
-            _DefaultItem.Add("退學:其他");
+            _DefaultItem.Add("退學:自動退學", new List<string>(new string[] { "321" }));
+            _DefaultItem.Add("退學:休學期滿", new List<string>(new string[] { "323" }));
+            _DefaultItem.Add("退學:未達畢業標準",new List<string>());
+            _DefaultItem.Add("退學:其他", new List<string>(new string[] { "325","326" }));
 
-            _DefaultItem.Add("休學:因病");
-            _DefaultItem.Add("休學:志趣不合");
-            _DefaultItem.Add("休學:經濟困難");
-            _DefaultItem.Add("休學:兵役");
-            _DefaultItem.Add("休學:出國");
-            _DefaultItem.Add("休學:其他");
+            _DefaultItem.Add("休學:因病", new List<string>(new string[] { "341" }));
+            _DefaultItem.Add("休學:志趣不合", new List<string>(new string[] { "342" }));
+            _DefaultItem.Add("休學:經濟困難", new List<string>(new string[] { "343" }));
+            _DefaultItem.Add("休學:兵役", new List<string>(new string[] { "345" }));
+            _DefaultItem.Add("休學:出國", new List<string>(new string[] { "348" }));
+            _DefaultItem.Add("休學:其他", new List<string>(new string[] { "346","347","349" }));
 
-            _DefaultItem.Add("復學生");
+            _DefaultItem.Add("復學生", new List<string>(new string[] { "221", "222", "223", "224", "225", "226", "237", "238", "239", "240", }));
 
-            _DefaultItem.Add("轉入:他校轉入");
-            _DefaultItem.Add("轉入:本校不同學制轉入");
+            _DefaultItem.Add("轉入:他校轉入", new List<string>(new string[] { "111", "112", "113", "114", "115", "121", "122", "123", "124", }));
+            _DefaultItem.Add("轉入:本校不同學制轉入",new List<string>());
 
-            _DefaultItem.Add("死亡");
-            _DefaultItem.Add("輔導延修");
+            _DefaultItem.Add("死亡", new List<string>(new string[] { "361" }));
+            _DefaultItem.Add("輔導延修", new List<string>(new string[] { "364" }));
             #endregion
 
             //建立異動代碼對照表
-            _UpdateCode = new Dictionary<string, string>();
+            _UpdateItems = new Dictionary<string, string>();
             //讀取XML
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(Properties.Resources.UpdateCode_SHD);
@@ -147,17 +148,29 @@ namespace UpdateRecordReport
                         reason = elem.InnerText;
                     }
 
-                    //只加入學籍異動類
+                    //只加入學籍異動類和轉入異動
                     if (elem.Name == "分類")
                     {
-                        if (elem.InnerText == "學籍異動") mustAdd = true;
+                        if (elem.InnerText == "學籍異動" || elem.InnerText == "轉入異動")
+                        {
+                            //延修代碼不可為選項
+                            if (code != "235" && code != "236") mustAdd = true;
+                        } 
                     }
                 }
 
-                if (!_UpdateCode.ContainsKey(code) && mustAdd)
+                if (!_UpdateItems.ContainsKey(code) && mustAdd)
                 {
-                    _UpdateCode.Add(code + ":" + reason, code);
+                    _UpdateItems.Add(code + ":" + reason, code);
                 }
+            }
+
+            //查詢代碼用字典
+            _QueryUpdateCodes = new Dictionary<string, string>();
+            foreach (KeyValuePair<string, string> k in _UpdateItems)
+            {
+                if (!_QueryUpdateCodes.ContainsKey(k.Value))
+                    _QueryUpdateCodes.Add(k.Value, k.Key);
             }
         }
 
@@ -195,51 +208,96 @@ namespace UpdateRecordReport
         private void _BGW_DoWork(object sender, DoWorkEventArgs e)
         {
             //建立學生物件字典
-            Dictionary<string, Studentobj> studentObjDic = new Dictionary<string, Studentobj>();
+            Dictionary<string, RecordObj> RecordObjDic = new Dictionary<string, RecordObj>();
+
+            //組SQL(強制加入501,235,236)
+            string updateCode = "'501','235','236','"; //畢業,延修一,延修二
+            foreach (List<string> codes in _MappingData.Values)
+            {
+                foreach(string s in codes)
+                {
+                    updateCode += s + "','";
+                }
+            }
+            updateCode = updateCode + "'";
 
             //SQL查詢資料
             QueryHelper _Q = new QueryHelper();
             StringBuilder sb = new StringBuilder();
-            sb.Append("select update_record.ref_student_id,update_record.update_code,student.name,student.gender,student.student_number,class.grade_year,dept.name as dept_name from update_record ");
-            sb.Append("left join student on update_record.ref_student_id = student.id ");
-            sb.Append("left join class on student.ref_class_id = class.id ");
-            sb.Append("left join dept on class.ref_dept_id = dept.id ");
-            sb.Append(string.Format("where update_record.school_year='{0}' and update_record.semester='{1}' ", _SchoolYear, _Semester));
+            sb.Append("select id,ref_student_id,ss_name,ss_student_number,ss_gender,ss_grade_year,ss_dept,update_code from update_record ");
+            sb.Append(string.Format("where school_year='{0}' and semester='{1}' and update_code in ({2})", _SchoolYear, _Semester, updateCode));
 
             DataTable dt = _Q.Select(sb.ToString());
 
+            //紀錄有501畢業代碼紀錄的學生ID
+            List<string> graduateList = new List<string>();
+            //紀錄有245,236延修代碼紀錄的學生ID
+            List<string> delayList = new List<string>();
+
             foreach (DataRow row in dt.Rows)
             {
-                string id = row["ref_student_id"].ToString();
-                string name = row["name"].ToString();
-                string gender = row["gender"].ToString();
-                string student_number = row["student_number"].ToString();
-                string grade_year = row["grade_year"].ToString();
-                string dept_name = row["dept_name"].ToString();
+                string uid = row["id"].ToString();
+                string sid = row["ref_student_id"].ToString();
                 string code = row["update_code"].ToString();
 
-                //字典不存在學生ID就新增
-                if (!studentObjDic.ContainsKey(id))
+                //有501代碼且不存在於passList者,sid加入清單
+                if (code == "501" && !graduateList.Contains(sid))
                 {
-                    studentObjDic.Add(id, new Studentobj(id, name, gender, student_number, grade_year, dept_name));
+                    graduateList.Add(sid);
                 }
 
-                //該學生物件的CodeList不存在此cdoe就加入
-                if (!studentObjDic[id].CodeList.Contains(code))
+                //有235或236代碼且不存在於delayList者,sid加入清單
+                if ((code == "235" || code == "236") && !delayList.Contains(sid))
                 {
-                    studentObjDic[id].CodeList.Add(code);
+                    delayList.Add(sid);
+                }
+
+                //字典不存在UID就新增
+                if (!RecordObjDic.ContainsKey(uid))
+                {
+                    RecordObjDic.Add(uid, new RecordObj(row));
                 }
             }
 
-            _CleanList = new List<Studentobj>();
-            _ErrorList = new List<Studentobj>();
+            _CleanList = new List<RecordObj>();
+            _ErrorList = new List<RecordObj>();
 
-            foreach (KeyValuePair<string, Studentobj> k in studentObjDic)
+            //過濾資料
+            foreach (KeyValuePair<string, RecordObj> k in RecordObjDic)
             {
-                //排除畢業代碼501
-                if (k.Value.CodeList.Contains("501")) continue;
+                //判斷是否繼續處理
+                bool canPass = false;
+                //學生系統編號存在於passList者,不做處理
+                if (graduateList.Contains(k.Value.Student_id)) continue;
+                //學生系統編號存在於delayList者,且代碼為235或236不做處理
+                if (delayList.Contains(k.Value.Student_id))
+                {
+                    if (k.Value.Code == "235" || k.Value.Code == "236")
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        //不是的話標記為延修身分
+                        k.Value.Delay = true;
+                    }
+                }
 
-                if(k.Value.Gender == "1" || k.Value.Gender == "0")
+                //不是_MappingData有選的異動代碼,不做處理
+                foreach (List<string> codes in _MappingData.Values)
+                {
+                    if (codes.Contains(k.Value.Code))
+                    {
+                        canPass = true;
+                        break;
+                    }
+                }
+
+                //canPass為false者跳過不處理
+                if (!canPass) continue;
+
+                //性別為男或女且有正確(1~4)年級者才處理,否則加入錯誤清單
+                if ((k.Value.Gender == "1" || k.Value.Gender == "0") && (k.Value.Grade == "1" || k.Value.Grade == "2" || k.Value.Grade == "3" || k.Value.Grade == "4"))
                 {
                     _CleanList.Add(k.Value);
                 }
@@ -267,13 +325,14 @@ namespace UpdateRecordReport
             Cells cs = ws.Cells;
             int index = 8;
             //需要跳下一行的行數
-            List<int> nextRow = new List<int>(new int[]{13,18,26}) ;
+            List<int> nextRow = new List<int>(new int[] { 13, 18, 26 });
 
-            Dictionary<string, List<Studentobj>> dica = getSortDic(普通科);
-            foreach(KeyValuePair<string, List<Studentobj>> k in dica)
+            Dictionary<string, List<RecordObj>> dica = getSortDic(普通科);
+            cs[3, 5].PutValue(_SchoolYear + " 學年第 " + _Semester + "     學期");
+            foreach (KeyValuePair<string, List<RecordObj>> k in dica)
             {
                 cs[index, 1].PutValue(k.Value.Count);
-                cs[index, 2].PutValue(getStudentCount(k.Value,"0","1"));
+                cs[index, 2].PutValue(getStudentCount(k.Value, "0", "1"));
                 cs[index, 3].PutValue(getStudentCount(k.Value, "0", "0"));
                 cs[index, 4].PutValue(getStudentCount(k.Value, "1", "1"));
                 cs[index, 5].PutValue(getStudentCount(k.Value, "1", "0"));
@@ -296,8 +355,9 @@ namespace UpdateRecordReport
             cs = ws.Cells;
             index = 8;
 
-            Dictionary<string, List<Studentobj>> dicb = getSortDic(綜合高中科);
-            foreach (KeyValuePair<string, List<Studentobj>> k in dicb)
+            Dictionary<string, List<RecordObj>> dicb = getSortDic(綜合高中科);
+            cs[3, 5].PutValue(_SchoolYear + " 學年第 " + _Semester + "     學期");
+            foreach (KeyValuePair<string, List<RecordObj>> k in dicb)
             {
                 cs[index, 1].PutValue(k.Value.Count);
                 cs[index, 2].PutValue(getStudentCount(k.Value, "0", "1"));
@@ -323,8 +383,9 @@ namespace UpdateRecordReport
             cs = ws.Cells;
             index = 8;
 
-            Dictionary<string, List<Studentobj>> dicc = getSortDic(職業科);
-            foreach (KeyValuePair<string, List<Studentobj>> k in dicc)
+            Dictionary<string, List<RecordObj>> dicc = getSortDic(職業科);
+            cs[3, 5].PutValue(_SchoolYear + " 學年第 " + _Semester + "     學期");
+            foreach (KeyValuePair<string, List<RecordObj>> k in dicc)
             {
                 cs[index, 1].PutValue(k.Value.Count);
                 cs[index, 2].PutValue(getStudentCount(k.Value, "0", "1"));
@@ -352,40 +413,43 @@ namespace UpdateRecordReport
             cs["C1"].PutValue("性別");
             cs["D1"].PutValue("年級");
             cs["E1"].PutValue("科別名稱");
+            cs["E1"].PutValue("異動代碼");
             index = 1;
-            foreach (Studentobj s in _ErrorList)
+            foreach (RecordObj s in _ErrorList)
             {
-                cs[index, 0].PutValue(s.Student_number);
+                //無學號者提供系統編號
+                cs[index, 0].PutValue(s.Student_number == "" ? "系統編號: " + s.Student_id : s.Student_number);
                 cs[index, 1].PutValue(s.Name);
                 cs[index, 2].PutValue(s.Gender);
                 cs[index, 3].PutValue(s.Grade);
                 cs[index, 4].PutValue(s.Dept);
+                cs[index, 4].PutValue(_QueryUpdateCodes[s.Code]);
                 index++;
             }
         }
 
-        private List<Studentobj> getStudentListByDept(String dept)
+        private List<RecordObj> getStudentListByDept(String dept)
         {
-            List<Studentobj> list = new List<Studentobj>();
+            List<RecordObj> list = new List<RecordObj>();
 
             switch (dept)
             {
                 case "職業科":
-                    foreach (Studentobj student in _CleanList)
+                    foreach (RecordObj obj in _CleanList)
                     {
-                        if (!student.Dept.Contains("普通科") && !student.Dept.Contains("綜合高中科"))
+                        if (!obj.Dept.Contains("普通科") && !obj.Dept.Contains("綜合高中科"))
                         {
-                            list.Add(student);
+                            list.Add(obj);
                         }
                     }
                     break;
 
                 default:
-                    foreach (Studentobj student in _CleanList)
+                    foreach (RecordObj obj in _CleanList)
                     {
-                        if (student.Dept.Contains(dept))
+                        if (obj.Dept.Contains(dept))
                         {
-                            list.Add(student);
+                            list.Add(obj);
                         }
                     }
                     break;
@@ -393,25 +457,26 @@ namespace UpdateRecordReport
             return list;
         }
 
-        private Dictionary<string, List<Studentobj>> getSortDic(List<Studentobj> list)
+        //將學生清單分類成_MappingData的各項目
+        private Dictionary<string, List<RecordObj>> getSortDic(List<RecordObj> list)
         {
-            Dictionary<string, List<Studentobj>> dic = new Dictionary<string, List<Studentobj>>();
+            Dictionary<string, List<RecordObj>> dic = new Dictionary<string, List<RecordObj>>();
 
             foreach (string key in _MappingData.Keys)
             {
                 //建立預設的鍵值 from _MappingData
-                dic.Add(key, new List<Studentobj>());
+                dic.Add(key, new List<RecordObj>());
 
                 //循環每個項目對應的代碼
                 foreach (string code in _MappingData[key])
                 {
-                    //循環每個學生找代碼
-                    foreach (Studentobj student in list)
+                    //循環每筆記錄找代碼
+                    foreach (RecordObj obj in list)
                     {
                         //有代碼者加入字典
-                        if (student.CodeList.Contains(code))
+                        if (obj.Code == code)
                         {
-                            dic[key].Add(student);
+                            dic[key].Add(obj);
                         }
                     }
                 }
@@ -498,7 +563,7 @@ namespace UpdateRecordReport
             _MappingData = new Dictionary<string, List<string>>();
 
             //建立預設建值
-            foreach(string item in _DefaultItem)
+            foreach (string item in _DefaultItem.Keys)
             {
                 _MappingData.Add(item, new List<string>());
             }
@@ -512,7 +577,7 @@ namespace UpdateRecordReport
                     string source = r.Cells[1].Value.ToString();
 
                     //取得異動代碼
-                    string code = _UpdateCode.ContainsKey(source) ? _UpdateCode[source] : "";
+                    string code = _UpdateItems.ContainsKey(source) ? _UpdateItems[source] : "";
 
                     if (target != "" && code != "")
                     {
@@ -551,12 +616,28 @@ namespace UpdateRecordReport
             else
             {
                 //UDT無資料則提供預設標記
-                for (int i = 0; i < Column1.Items.Count; i++)
+                foreach(KeyValuePair<string,List<string>> k in _DefaultItem)
                 {
-                    row = new DataGridViewRow();
-                    row.CreateCells(dataGridViewX1);
-                    row.Cells[0].Value = Column1.Items[i];
-                    dataGridViewX1.Rows.Add(row);
+                    //若沒有預設代碼就給一個空白的row
+                    if(k.Value.Count == 0)
+                    {
+                        row = new DataGridViewRow();
+                        row.CreateCells(dataGridViewX1);
+                        row.Cells[0].Value = k.Key;
+                        dataGridViewX1.Rows.Add(row);
+                    }
+                    else
+                    {
+                        //有預設代碼將代碼帶入預設選項
+                        foreach (string s in k.Value)
+                        {
+                            row = new DataGridViewRow();
+                            row.CreateCells(dataGridViewX1);
+                            row.Cells[0].Value = k.Key;
+                            row.Cells[1].Value = _QueryUpdateCodes[s];
+                            dataGridViewX1.Rows.Add(row);
+                        }
+                    }
                 }
             }
         }
@@ -578,13 +659,13 @@ namespace UpdateRecordReport
         }
 
         //取得指定年級性別的一般生總數
-        private int getStudentCount(List<Studentobj> list, String grade, String gender)
+        private int getStudentCount(List<RecordObj> list, String grade, String gender)
         {
             int count = 0;
             switch (grade)
             {
                 case "0": //不指定年級
-                    foreach (Studentobj s in list)
+                    foreach (RecordObj s in list)
                     {
                         if (s.Gender == gender)
                         {
@@ -593,7 +674,7 @@ namespace UpdateRecordReport
                     }
                     break;
                 default:
-                    foreach (Studentobj s in list)
+                    foreach (RecordObj s in list)
                     {
                         if (s.Grade == grade && s.Gender == gender)
                         {
@@ -606,18 +687,13 @@ namespace UpdateRecordReport
         }
 
         //取得延修身分的學生數量
-        private int getDelayCount(List<Studentobj> list,string gender)
+        private int getDelayCount(List<RecordObj> list, string gender)
         {
             int count = 0;
-            //延修代碼
-            List<string> delayCodes = new List<string>(new string[]{"235","236"});
 
-            foreach(Studentobj student in list)
+            foreach (RecordObj obj in list)
             {
-                foreach(string code in delayCodes)
-                {
-                    if (student.CodeList.Contains(code) && student.Gender == gender) count++;
-                }
+                if (obj.Delay && obj.Gender == gender) count++;
             }
 
             return count;

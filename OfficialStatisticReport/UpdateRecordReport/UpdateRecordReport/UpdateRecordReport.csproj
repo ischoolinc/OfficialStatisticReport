@@ -87,7 +87,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Studentobj.cs" />
+    <Compile Include="RecordObj.cs" />
     <Compile Include="UpdateRecordReportUDT.cs" />
   </ItemGroup>
   <ItemGroup>
