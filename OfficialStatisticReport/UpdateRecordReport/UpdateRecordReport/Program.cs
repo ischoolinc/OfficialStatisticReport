@@ -12,7 +12,7 @@ namespace UpdateRecordReport
         [FISCA.MainMethod]
         public static void main()
         {
-            FISCA.Presentation.RibbonBarItem item1 = FISCA.Presentation.MotherForm.RibbonBarItems["教務作業", "公務統計"];
+            FISCA.Presentation.RibbonBarItem item1 = FISCA.Presentation.MotherForm.RibbonBarItems["教務作業", "資料統計"];
             item1["報表"].Image = Properties.Resources.Report;
             item1["報表"].Size = FISCA.Presentation.RibbonBarButton.MenuButtonSize.Large;
             item1["報表"]["高中職學校學生異動報告"].Enable = Permissions.高中職學校學生異動報告權限;

@@ -14,7 +14,7 @@ namespace ClassAndStudentInfo
         public static void Main()
         {
 
-            FISCA.Presentation.RibbonBarItem item1 = FISCA.Presentation.MotherForm.RibbonBarItems["教務作業", "公務統計"];
+            FISCA.Presentation.RibbonBarItem item1 = FISCA.Presentation.MotherForm.RibbonBarItems["教務作業", "資料統計"];
             item1["報表"].Image = Properties.Resources.Report;
             item1["報表"].Size = FISCA.Presentation.RibbonBarButton.MenuButtonSize.Large;
             item1["報表"]["班級及學生概況1"].Enable = Permissions.班級及學生概況1權限;
