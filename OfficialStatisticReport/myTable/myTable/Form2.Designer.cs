@@ -40,7 +40,7 @@
             this.labelX2 = new DevComponents.DotNetBar.LabelX();
             this.comboBoxEx2 = new DevComponents.DotNetBar.Controls.ComboBoxEx();
             this.linkLabel1 = new System.Windows.Forms.LinkLabel();
-            this.Column2 = new MyTable.DataGridViewComboBoxExColumn(); ;
+            this.Column2 = new MyTable.DataGridViewComboBoxExColumn();
             this.Column3 = new MyTable.DataGridViewComboBoxExColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewX1)).BeginInit();
             this.SuspendLayout();
