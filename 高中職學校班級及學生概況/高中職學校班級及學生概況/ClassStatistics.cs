@@ -205,7 +205,7 @@ public int SR24C14 = 0;
                     if (!string.IsNullOrEmpty(ClassRec.Department))
                     {
                         if (type == 0)
-                            if (ClassRec.Department == "普通科")
+                            if (ClassRec.Department.Contains("普通科"))
                                 pass1 = true;
 
                         if (type == 1)
@@ -234,7 +234,7 @@ public int SR24C14 = 0;
                             if (!string.IsNullOrEmpty(Student.Department))
                             {
                                 if (type == 0)
-                                    if (Student.Department == "普通科")
+                                    if (Student.Department.Contains("普通科"))
                                         pass2 = true;
 
                                 if (type == 1)
