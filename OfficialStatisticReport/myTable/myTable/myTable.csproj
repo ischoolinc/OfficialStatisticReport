@@ -32,7 +32,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Aspose.Cells">
-      <HintPath>D:\ischool desktop\modules\Campus\Aspose.Cells.dll</HintPath>
+      <HintPath>Lib\Aspose.Cells.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="DevComponents.DotNetBar2, Version=9.5.0.1, Culture=neutral, PublicKeyToken=7eb7c3a35b91de04, processorArchitecture=MSIL">
@@ -40,40 +40,44 @@
       <HintPath>D:\ischool desktop\components\DevComponents.DotNetBar2.dll</HintPath>
     </Reference>
     <Reference Include="FISCA">
-      <HintPath>D:\ischool desktop\kernel\FISCA.dll</HintPath>
+      <HintPath>Lib\FISCA.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="FISCA.Authentication">
-      <HintPath>D:\ischool desktop\kernel\FISCA.Authentication.dll</HintPath>
+      <HintPath>Lib\FISCA.Authentication.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="FISCA.Data">
-      <HintPath>D:\ischool desktop\kernel\FISCA.Data.dll</HintPath>
+      <HintPath>Lib\FISCA.Data.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="FISCA.DSAUtil">
-      <HintPath>D:\ischool desktop\kernel\FISCA.DSAUtil.dll</HintPath>
+      <HintPath>Lib\FISCA.DSAUtil.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="FISCA.Permission, Version=1.2.0.2, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>D:\ischool desktop\kernel\FISCA.Permission.dll</HintPath>
+      <HintPath>Lib\FISCA.Permission.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="FISCA.Presentation">
-      <HintPath>D:\ischool desktop\kernel\FISCA.Presentation.dll</HintPath>
+      <HintPath>Lib\FISCA.Presentation.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="FISCA.UDT">
-      <HintPath>D:\ischool desktop\kernel\FISCA.UDT.dll</HintPath>
+      <HintPath>Lib\FISCA.UDT.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="K12.Data">
-      <HintPath>D:\ischool desktop\modules\SHSchoolLoader\K12.Data.dll</HintPath>
+      <HintPath>Lib\K12.Data.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SHSchool.Data">
-      <HintPath>D:\ischool desktop\modules\SHSchoolLoader\SHSchool.Data.dll</HintPath>
+      <HintPath>Lib\SHSchool.Data.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="SmartSchool.Core">
+      <HintPath>Lib\SmartSchool.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -125,10 +129,14 @@
     <None Include="Properties\DataSources\myStudent.datasource" />
     <None Include="Properties\DataSources\Progress.datasource" />
     <None Include="Properties\DataSources\Tagobj.datasource" />
+    <None Include="Resources\template%28105.7 ver%29.xls" />
     <None Include="Resources\template.xls" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Report.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Lib\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
