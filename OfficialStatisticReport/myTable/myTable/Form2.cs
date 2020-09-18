@@ -38,10 +38,10 @@ namespace myTable
         public Form2()
         {
             InitializeComponent();
-            
+
             // 入學方式
             Column2Prepare();
-            
+
             // 入學身分
             dataGridViewComboBoxExColumn2Prepare();
 
@@ -59,7 +59,7 @@ namespace myTable
         }
 
         private void LoadConfigXml()
-        {                        
+        {
             ConfigData cd = K12.Data.School.Configuration["新生入學統計報表_來源目標設定Config"];
 
             XmlElement config = cd.GetXml("XmlData", null);
@@ -74,13 +74,13 @@ namespace myTable
                 XmlElement EnterSchool_Way = (XmlElement)config.SelectSingleNode("入學方式");
 
                 XmlElement EnterSchool_identity = (XmlElement)config.SelectSingleNode("入學身分");
-                
+
                 XmlElement FreshMenWith_Aboriginal_Identity = (XmlElement)config.SelectSingleNode("新生中具原住民身分者");
 
                 XmlNodeList EnterSchool_WayList;
 
                 XmlNodeList EnterSchool_identityList;
-                
+
                 XmlNodeList FreshMenWith_Aboriginal_IdentityList;
 
                 DataGridViewRow row;
@@ -112,14 +112,14 @@ namespace myTable
                 }
 
                 if (EnterSchool_identity != null) //  Config內有設定才做讀取
-                {   
+                {
                     EnterSchool_identityList = EnterSchool_identity.SelectNodes("item");
 
                     foreach (XmlElement item in EnterSchool_identityList)
                     {
                         row = new DataGridViewRow();
                         row.CreateCells(dataGridViewX2);
-                        row.Cells[0].Value = item.HasAttribute("target")? item.GetAttribute("target"):"" ;
+                        row.Cells[0].Value = item.HasAttribute("target") ? item.GetAttribute("target") : "";
                         row.Cells[1].Value = item.HasAttribute("source") ? item.GetAttribute("source") : "";
                         dataGridViewX2.Rows.Add(row);
                     }
@@ -164,7 +164,7 @@ namespace myTable
             else
             {
                 #region 產生空白設定檔
-                
+
                 config = new XmlDocument().CreateElement("新生入學統計報表_來源目標設定Config");
 
                 XmlElement EnterSchool_Way = config.OwnerDocument.CreateElement("入學方式");
@@ -198,9 +198,9 @@ namespace myTable
                     EnterSchool_Way.AppendChild(EnterSchool_Way_Item);
 
                     i++;
-                } 
+                }
                 #endregion
-                
+
                 #region 2.入學身分
                 XmlElement EnterSchool_identity = config.OwnerDocument.CreateElement("入學身分");
 
@@ -244,7 +244,7 @@ namespace myTable
 
                 EnterSchool_identity.AppendChild(EnterSchool_identity4);
 
-                config.AppendChild(EnterSchool_identity); 
+                config.AppendChild(EnterSchool_identity);
                 #endregion
 
                 #region 3.新生中具原住民身分者
@@ -260,14 +260,14 @@ namespace myTable
 
                 FreshMenWith_Aboriginal_Identity.AppendChild(FreshMenWith_Aboriginal_Identity1);
 
-                config.AppendChild(FreshMenWith_Aboriginal_Identity); 
+                config.AppendChild(FreshMenWith_Aboriginal_Identity);
                 #endregion
 
                 cd.SetXml("XmlData", config);
-                                                           
+
                 #endregion
-            }            
-            cd.Save();        
+            }
+            cd.Save();
         }
 
         ////Column2的選單產生  (1.入學方式)
@@ -302,7 +302,7 @@ namespace myTable
             Column2.Items.Add("入學方式:特色招生--考試分發");
             Column2.Items.Add("入學方式:特色招生--甄選入學");
             Column2.Items.Add("入學方式:適性輔導安置(十二年安置)");
-            Column2.Items.Add("入學方式:其他");            
+            Column2.Items.Add("入學方式:其他");
         }
 
         //入學方式、入學身分、新生中具原住民身分者 來源欄位填值
@@ -335,7 +335,7 @@ namespace myTable
                 dataGridViewComboBoxExColumn4.Items.Add(item);//建立dataGridViewComboBoxExColumn4的來源選單
             }
         }
-        
+
         //// 2.入學身分
         private void dataGridViewComboBoxExColumn2Prepare()
         {
@@ -385,7 +385,7 @@ namespace myTable
         }
 
         //讀取DataGridView資料，以建立XML_mappingData
-        void ReadXMLMappingData() 
+        void ReadXMLMappingData()
         {
             SetXMLMappingDataKey(); //初始化_mappingData
 
@@ -417,43 +417,43 @@ namespace myTable
                     }
                 }
             }
-            foreach (DataGridViewRow r in dataGridViewX2.Rows)
+            foreach (DataGridViewRow dgvR in dataGridViewX2.Rows)
             {
-                if (r.Cells[0].Value != null && r.Cells[1].Value != null)  //欄位有空值跳下一行
+                if (dgvR.Cells[0].Value != null && dgvR.Cells[1].Value != null)  //欄位有空值跳下一行
                 {
                     String id = "";
-                    foreach (KeyValuePair<String, String> k in _column3Items) //尋找選項的TagID
+                    foreach (KeyValuePair<String, String> keyPair in _column3Items) //尋找選項的TagID
                     {
-                        String item = r.Cells[1].Value.ToString();
+                        String item = dgvR.Cells[1].Value.ToString();
                         if (!item.Contains(":")) //若選項無":"字串代表建立時prefix為空白,查詢時需補上":"
                         {
                             item = ":" + item;
                         }
-                        if (item == k.Value)
+                        if (item == keyPair.Value)
                         {
-                            id = k.Key;
+                            id = keyPair.Key;
                         }
                     }
 
                     if (id != "") //找不到對應ID不執行
                     {
-                        if (!XML_mappingData.ContainsKey(r.Cells[0].Value.ToString())) //建立目標對應ID的字典
+                        if (!XML_mappingData.ContainsKey(dgvR.Cells[0].Value.ToString())) //建立目標對應ID的字典
                         {
-                            XML_mappingData.Add(r.Cells[0].Value.ToString(), new List<string>());
+                            XML_mappingData.Add(dgvR.Cells[0].Value.ToString(), new List<string>());
                         }
-                        XML_mappingData[r.Cells[0].Value.ToString()].Add(id); //收集Mapping的TagId
+                        XML_mappingData[dgvR.Cells[0].Value.ToString()].Add(id); //收集Mapping的TagId
                     }
                 }
             }
 
-            foreach (DataGridViewRow r in dataGridViewX3.Rows)
+            foreach (DataGridViewRow dgvR in dataGridViewX3.Rows)
             {
-                if (r.Cells[0].Value != null && r.Cells[1].Value != null)  //欄位有空值跳下一行
+                if (dgvR.Cells[0].Value != null && dgvR.Cells[1].Value != null)  //欄位有空值跳下一行
                 {
                     String id = "";
                     foreach (KeyValuePair<String, String> k in _column3Items) //尋找選項的TagID
                     {
-                        String item = r.Cells[1].Value.ToString();
+                        String item = dgvR.Cells[1].Value.ToString();
                         if (!item.Contains(":")) //若選項無":"字串代表建立時prefix為空白,查詢時需補上":"
                         {
                             item = ":" + item;
@@ -466,11 +466,11 @@ namespace myTable
 
                     if (id != "") //找不到對應ID不執行
                     {
-                        if (!XML_mappingData.ContainsKey(r.Cells[0].Value.ToString())) //建立目標對應ID的字典
+                        if (!XML_mappingData.ContainsKey(dgvR.Cells[0].Value.ToString())) //建立目標對應ID的字典
                         {
-                            XML_mappingData.Add(r.Cells[0].Value.ToString(), new List<string>());
+                            XML_mappingData.Add(dgvR.Cells[0].Value.ToString(), new List<string>());
                         }
-                        XML_mappingData[r.Cells[0].Value.ToString()].Add(id); //收集Mapping的TagId
+                        XML_mappingData[dgvR.Cells[0].Value.ToString()].Add(id); //收集Mapping的TagId
                     }
                 }
             }
@@ -498,7 +498,7 @@ namespace myTable
         }
 
         //讀取DataGridView資料， 舊方法，已不使用
-        void ReadMappingData() 
+        void ReadMappingData()
         {
             SetMappingDataKey(); //初始化_mappingData
             foreach (DataGridViewRow r in dataGridViewX1.Rows)
@@ -566,11 +566,14 @@ namespace myTable
             _BGWClassStudentAbsenceDetail = new BackgroundWorker();
             _BGWClassStudentAbsenceDetail.DoWork += new DoWorkEventHandler(_BGWClassStudentAbsenceDetail_DoWork);
             _BGWClassStudentAbsenceDetail.RunWorkerCompleted += new RunWorkerCompletedEventHandler(_BGWClassStudentAbsenceDetail_Completed);
+            this.picLoding.Visible = true;
             _BGWClassStudentAbsenceDetail.RunWorkerAsync();
+            
         }
 
         private void _BGWClassStudentAbsenceDetail_Completed(object sender, RunWorkerCompletedEventArgs e)
         {
+            this.picLoding.Visible = false;
             this.buttonX1.Enabled = true;
             this.linkLabel1.Enabled = true;
             this.dataGridViewX1.Enabled = true;
@@ -604,6 +607,7 @@ namespace myTable
 
         private void _BGWClassStudentAbsenceDetail_DoWork(object sender, DoWorkEventArgs e)
         {
+           
             Dictionary<String, myStudent> myDic = new Dictionary<string, myStudent>();
             List<myStudent> mylist = new List<myStudent>();
             QueryHelper _Q = new QueryHelper();
@@ -613,7 +617,7 @@ namespace myTable
 
             //2017/1/17 穎驊改寫修正， 上面的SQL 僅會抓取學生 所屬班級上的 科別 ，而不會抓學生身上自己設定的科別 ， 現在該改SQL，  優先先抓取學生自己的科別。 若無 則以 班級設定的科別帶入。
             DataTable dt = _Q.Select("select student.id,student.name,student.gender,student.permanent_address,student.ref_class_id,student.status,student.ref_dept_id as student_ref_dept_id,class.ref_dept_id as class_ref_dept_id ,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id from student left join class on student.ref_class_id=class.id  left join dept on  case    when student.ref_dept_id is null   then class.ref_dept_id=dept.id   else student.ref_dept_id=dept.id  end left join tag_student on student.id= tag_student.ref_student_id where student.status in ('1','4','16') and class.grade_year='1'");
-
+            int num = 0;
             //建立myStuden物件放至List中
             foreach (DataRow row in dt.Rows)
             {
@@ -628,38 +632,49 @@ namespace myTable
 
                 //戶籍 縣市
                 String Before_School_Location = "";
-                
+
+
                 // 選取此學生 的前期畢業學校 資訊(用來取得 前學校所在地)
                 K12.Data.BeforeEnrollmentRecord ber = K12.Data.BeforeEnrollment.SelectByStudentID(id);
 
-                if (ber != null) 
+                if (ber != null)
                 {
                     Before_School_Location = ber.SchoolLocation;
-                
-                }                
-                
+
+                }
+
                 System.Xml.Linq.XDocument XD;
-
-                XD = System.Xml.Linq.XDocument.Parse(""+row["permanent_address"]);
-
-                System.Xml.Linq.XElement element = XD.Element("AddressList");
-
                 //戶籍 縣市
                 String County = "";
+                string permanent_address = "" + row["permanent_address"];
 
-                if (element.Element("Address") != null) 
+                if (permanent_address != "") // 如果戶籍地不是空值
                 {
-                    if (element.Element("Address").Element("County") != null)
+                    XD = System.Xml.Linq.XDocument.Parse(permanent_address);
+                    System.Xml.Linq.XElement element = XD.Element("AddressList");
+
+                    if (element.Element("Address") != null)
                     {
-                        County = element.Element("Address").Element("County").Value;
-                    };                                
-                };
-                
+                        if (element.Element("Address").Element("County") != null)
+                        {
+                            County = element.Element("Address").Element("County").Value;
+                        };
+                    };
+                }
+                else
+                {
+                    County = "";
+                }
+
                 if (!myDic.ContainsKey(id)) //ID當key,不存在就建立
                 {
-                    myDic.Add(id, new myStudent(id, name, gender, ref_class_id, class_name, grade_year, dept_name,County,Before_School_Location, new List<string>()));
+                    //{
+                    //    string location = Before_School_Location;
+                    //}
+                    myDic.Add(id, new myStudent(id, name, gender, ref_class_id, class_name, grade_year, dept_name, County, Before_School_Location, new List<string>()));
                 }
                 myDic[id].Tag.Add(ref_tag_id);
+                num++;
             }
 
             //取得新生異動資料清單
@@ -674,6 +689,7 @@ namespace myTable
 
             filter = new Filter(mylist, dept);
             Export();
+            
         }
 
         //確認學生為一般新生,排除重讀生等其他狀態
@@ -700,7 +716,7 @@ namespace myTable
                         // 010 取得相當於丙級(含)以上技術士證之資格者(需附證明文件)
                         // 011 持香港澳門學歷者(需附證明文件)
                         // 099 其他(需附證明文件
-                      
+
                         if (Convert.ToInt16(record.UpdateCode) < 100) //異動代碼小於100
                         {
                             return true;
@@ -924,7 +940,7 @@ namespace myTable
             EnterWayTagsID_Mapping_List.Add(enter_Way_SpecialRecuit_ExamAtribute_ID_list);
             EnterWayTagsID_Mapping_List.Add(enter_Way_SpecialRecuit_Selection_ID_list);
             EnterWayTagsID_Mapping_List.Add(enter_Way_SafelySet_ID_list);
-            EnterWayTagsID_Mapping_List.Add(enter_Way_Other_ID_list); 
+            EnterWayTagsID_Mapping_List.Add(enter_Way_Other_ID_list);
             #endregion
 
 
@@ -991,7 +1007,7 @@ namespace myTable
             EnterIdentityTagsID_Mapping_List.Add(enter_identity_normal_ID_list);
             EnterIdentityTagsID_Mapping_List.Add(enter_identity_aboriginal_ID_list);
             EnterIdentityTagsID_Mapping_List.Add(enter_identity_IEP_ID_list);
-            EnterIdentityTagsID_Mapping_List.Add(enter_identity_Other_list); 
+            EnterIdentityTagsID_Mapping_List.Add(enter_identity_Other_list);
             #endregion
 
 
@@ -1008,10 +1024,10 @@ namespace myTable
                         aboIDList.Add(s);
                     }
                 }
-            } 
+            }
             #endregion
 
-            
+
             //新生入學方式統計表-- 填值
             Workbook wk2 = new Workbook();
             wk2.Open(new MemoryStream(Properties.Resources.template_105_7_ver_)); //開啟範本文件 // 2017/1/17 穎驊筆記，在此載入105/7 最新版
@@ -1022,7 +1038,7 @@ namespace myTable
             cs = ws.Cells;
 
             index = 12;
-
+        //todo 
             int col = 10;
 
             int flexInsex = 1; //因為樣板不是每一項都是佔1格 ，有些有二合一合併，所以靠一個參數彈性調整(可以自行 去看 Resource/ template(105.7ver) 內有許多 合併欄位)
@@ -1032,6 +1048,7 @@ namespace myTable
             // 每一科別的整理
             foreach (KeyValuePair<String, List<myStudent>> k in filter.dic_byDept)
             {
+                 col = 10;
                 //Table1 Left
                 cs[index, 1].PutValue(filter.getDeptCode(k.Key)); //科別代碼
                 cs[index, 2].PutValue(k.Key); //科別名稱
@@ -1092,7 +1109,7 @@ namespace myTable
                 All_EnterWays_StudentList.Add(enter_Way_SpecialRecuit_ExamAtribute_Student_list);
                 All_EnterWays_StudentList.Add(enter_Way_SpecialRecuit_Selection_Student_list);
                 All_EnterWays_StudentList.Add(enter_Way_SafelySet_Student_list);
-                All_EnterWays_StudentList.Add(enter_Way_Other_Student_list); 
+                All_EnterWays_StudentList.Add(enter_Way_Other_Student_list);
                 #endregion
 
                 #region 填值， 以入學方式、入學身分 二因素 做 網狀Mapping
@@ -1150,9 +1167,9 @@ namespace myTable
                             }
                         }
                     }
-                } 
+                }
                 #endregion
-          
+
                 //Table1 Right
                 //row = 10;
                 //foreach (KeyValuePair<String, List<String>> map in _mappingData) //Form2傳入的Mapping資料
@@ -1166,7 +1183,7 @@ namespace myTable
                 //    row++; //換欄
 
                 //}
-            
+
                 index++; //每做完一次k.value即換行
             }
 
@@ -1190,7 +1207,7 @@ namespace myTable
             //}
 
 
-          
+
 
             // 入學身份:一般生(非外加錄取) ，Student List           
             List<myStudent> enter_identity_normal_Student_list = new List<myStudent>();
@@ -1234,7 +1251,7 @@ namespace myTable
 
             foreach (List<string> EnterWaysTagID in EnterWayTagsID_Mapping_List)
             {
-                
+
                 List<myStudent> EnterWaysTagID_Mapping_StudentList_collect__enter_identity_normal_Student_list = new List<myStudent>();
 
                 List<myStudent> EnterWaysTagID_Mapping_StudentList_collect__enter_identity_aboriginal_Student_list = new List<myStudent>();
@@ -1268,7 +1285,7 @@ namespace myTable
                 cs[28, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "1")); //入學身份:外加錄取--其他 男生總數 in EnterWayTagsID_Mapping_List
                 cs[28, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "0")); //入學身份:外加錄取--其他 女生總數 in EnterWayTagsID_Mapping_List
 
-              
+
 
                 if (col == 9)
                 {
@@ -1289,7 +1306,7 @@ namespace myTable
                 }
             }
 
-       
+
 
 
             ////收集原住民生
@@ -1431,12 +1448,12 @@ namespace myTable
                                 collect__abo_LastOther.Add(Ms);
                             }
 
-                            
+
                         }
                         else
                         {
                             collect__abo_LastOther.Add(Ms);
-                            
+
                         }
                     }
                 }
@@ -1486,7 +1503,7 @@ namespace myTable
 
                 cs[31, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__collect__LastOther, "1")); //其他種入學男生總數 in EnterWayTagsID_Mapping_List
                 cs[31, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__collect__LastOther, "0")); //其他種入學女生總數 in EnterWayTagsID_Mapping_List
-                
+
                 if (col == 9)
                 {
                     col = 12;
@@ -1529,8 +1546,8 @@ namespace myTable
             //cs[37, 8].PutValue(filter.getGenderCount(collect__LastGradeF, "0")); //非應屆畢業女生總數 
             #endregion
 
-            
-            
+
+
             ////Table3 Right
             //Dictionary<String, List<String>> ndic = new Dictionary<string, List<string>>(); //為綜合入學方式,建立字典
             //foreach (KeyValuePair<String, List<String>> map in _mappingData)
@@ -1661,12 +1678,12 @@ namespace myTable
 
             cs[33, 7].PutValue(filter.getGenderCount(collect__OtherCounty, "1")); //戶籍非位於本縣市男生總數
             cs[33, 8].PutValue(filter.getGenderCount(collect__OtherCounty, "0")); //戶籍非位於本縣市女生總數 
-            
+
             col = 9;
-             
+
             flexInsex = 1; //因為樣板不是每一項都是佔1格 ，有些有二合一合併，所以靠一個參數彈性調整
 
-            foreach(List<string> EnterWaysTagID in EnterWayTagsID_Mapping_List)
+            foreach (List<string> EnterWaysTagID in EnterWayTagsID_Mapping_List)
             {
                 List<myStudent> EnterWaysTagID_Mapping_StudentList_LocalCounty = new List<myStudent>();
 
@@ -1687,18 +1704,18 @@ namespace myTable
                     col = 12;
                     flexInsex = 2;
                 }
-                else 
+                else
                 {
                     if (col == 36)
                     {
-                        col = col + 3;                            
-                        flexInsex = 1;  
+                        col = col + 3;
+                        flexInsex = 1;
                     }
                     else
                     {
-                        col = col + 4;  
-                    }                                  
-                }                
+                        col = col + 4;
+                    }
+                }
             }
             #endregion
 
@@ -1851,11 +1868,11 @@ namespace myTable
                     Collect_BeforeSchoolLocationList["其他"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-            } 
+            }
             #endregion
 
             #region 填值
-            
+
             cs[35, 6].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["總計"], "1")); // 總計 男
             cs[36, 6].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["總計"], "0")); // 總計 女
 
@@ -1928,7 +1945,7 @@ namespace myTable
             cs[35, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["其他"], "1")); // 其他 男
             cs[36, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["其他"], "0")); // 其他 女  
             #endregion
-           
+
             #endregion
 
             cs["U5"].PutValue(_SchoolYear);
@@ -1968,7 +1985,7 @@ namespace myTable
             ConfigData cd = K12.Data.School.Configuration["新生入學統計報表_來源目標設定Config"];
 
             XmlElement config = cd.GetXml("XmlData", null);
-            
+
             if (config != null) //如果不是空的
             {
                 #region 表1--入學方式 Xml 紀錄 儲存
@@ -2053,7 +2070,7 @@ namespace myTable
 
                 }
 
-                config.AppendChild(EnterSchool_Way);  
+                config.AppendChild(EnterSchool_Way);
                 #endregion
 
                 #region 表2--入學身份 Xml 紀錄 儲存
@@ -2071,12 +2088,12 @@ namespace myTable
 
                         XmlElement EnterSchool_identity_item = EnterSchool_identity.OwnerDocument.CreateElement("item");
 
-                        if (row.Cells[0].Value == null || ""+row.Cells[0].Value == "") //遇到空白的Target即跳到下個loop
+                        if (row.Cells[0].Value == null || "" + row.Cells[0].Value == "") //遇到空白的Target即跳到下個loop
                         {
                             continue;
                         }
 
-                        if (row.Cells[1].Value == null || ""+row.Cells[1].Value == "") //遇到空白的Source即跳到下個loop
+                        if (row.Cells[1].Value == null || "" + row.Cells[1].Value == "") //遇到空白的Source即跳到下個loop
                         {
                             continue;
                         }
@@ -2109,12 +2126,12 @@ namespace myTable
 
                         XmlElement EnterSchool_identity_item = EnterSchool_identity.OwnerDocument.CreateElement("item");
 
-                        if (row.Cells[0].Value == null || ""+row.Cells[0].Value == "") //遇到空白的Target即跳到下個loop
+                        if (row.Cells[0].Value == null || "" + row.Cells[0].Value == "") //遇到空白的Target即跳到下個loop
                         {
                             continue;
                         }
 
-                        if (row.Cells[1].Value == null || ""+row.Cells[1].Value == "") //遇到空白的Source即跳到下個loop
+                        if (row.Cells[1].Value == null || "" + row.Cells[1].Value == "") //遇到空白的Source即跳到下個loop
                         {
                             continue;
                         }
@@ -2138,7 +2155,7 @@ namespace myTable
 
                 }
 
-                config.AppendChild(EnterSchool_identity); 
+                config.AppendChild(EnterSchool_identity);
                 #endregion
 
                 #region 新生中具原住民身分者 Xml 紀錄儲存
@@ -2156,12 +2173,12 @@ namespace myTable
 
                         XmlElement FreshMenWith_Aboriginal_Identity_item = FreshMenWith_Aboriginal_Identity.OwnerDocument.CreateElement("item");
 
-                        if (row.Cells[0].Value == null || ""+row.Cells[0].Value == "") //遇到空白的Target即跳到下個loop
+                        if (row.Cells[0].Value == null || "" + row.Cells[0].Value == "") //遇到空白的Target即跳到下個loop
                         {
                             continue;
                         }
 
-                        if (row.Cells[1].Value == null || ""+row.Cells[1].Value == "") //遇到空白的Source即跳到下個loop
+                        if (row.Cells[1].Value == null || "" + row.Cells[1].Value == "") //遇到空白的Source即跳到下個loop
                         {
                             continue;
                         }
@@ -2195,12 +2212,12 @@ namespace myTable
 
                         XmlElement FreshMenWith_Aboriginal_Identity_item = FreshMenWith_Aboriginal_Identity.OwnerDocument.CreateElement("item");
 
-                        if (row.Cells[0].Value == null || ""+row.Cells[0].Value == "") //遇到空白的Target即跳到下個loop
+                        if (row.Cells[0].Value == null || "" + row.Cells[0].Value == "") //遇到空白的Target即跳到下個loop
                         {
                             continue;
                         }
 
-                        if (row.Cells[1].Value == null || ""+row.Cells[1].Value == "") //遇到空白的Source即跳到下個loop
+                        if (row.Cells[1].Value == null || "" + row.Cells[1].Value == "") //遇到空白的Source即跳到下個loop
                         {
                             continue;
                         }
@@ -2223,16 +2240,16 @@ namespace myTable
                     }
                 }
 
-                config.AppendChild(FreshMenWith_Aboriginal_Identity); 
+                config.AppendChild(FreshMenWith_Aboriginal_Identity);
                 #endregion
 
             }
-            else 
+            else
             {
-                        
+
             }
             cd.SetXml("XmlData", config);
-            cd.Save();                        
+            cd.Save();
         }
 
 
@@ -2326,7 +2343,7 @@ namespace myTable
                 List<myTableUDT> UDTlist = _A.Select<myTableUDT>();
                 _A.DeletedValues(UDTlist); //清除UDT資料
                 dataGridViewX1.Rows.Clear();  //清除datagridview資料
-                
+
                 //LoadLastRecord(); //再次讀入Mapping設定
                 LoadConfigXml();
             }
@@ -2334,7 +2351,7 @@ namespace myTable
             {
                 MessageBox.Show("網路或資料庫異常,請稍後再試...");
             }
-            
+
         }
 
         //確認學生為拿 一般畢業證書、修業證書、還是其他
@@ -2371,9 +2388,9 @@ namespace myTable
                         {
                             return "當年修業";
                         }
-                        else 
+                        else
                         {
-                            return "其他(含領結業證書)";            
+                            return "其他(含領結業證書)";
                         }
                     }
                 }

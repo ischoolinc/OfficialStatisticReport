@@ -91,9 +91,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DataGridViewComboBoxExColumn.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Include="DataGridViewComboBoxExColumn.cs" />
     <Compile Include="Filter.cs" />
     <Compile Include="Form2.cs">
       <SubType>Form</SubType>
@@ -120,6 +118,7 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
@@ -137,6 +136,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Lib\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\loading.gif" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
