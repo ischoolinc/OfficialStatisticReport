@@ -59,13 +59,14 @@ namespace ArrangeClass
             FISCA.Presentation.MotherForm.SetStatusBarMessage("產生 編班名冊 已完成");
             SaveFileDialog sd = new System.Windows.Forms.SaveFileDialog();
             sd.Title = "另存新檔";
-            sd.FileName = "編班名冊.xlsx";
-            sd.Filter = "Excel檔案 (*.xlsx)|*.xlsx|所有檔案 (*.*)|*.*";
+            sd.FileName = "編班名冊.xls";
+            sd.Filter = "Excel檔案 (*.xls)|*.xls|所有檔案 (*.*)|*.*";
             if (sd.ShowDialog() == DialogResult.OK)
             {
                 try
                 {
-                    _Wk.Save(sd.FileName);
+                    //_Wk.Save(sd.FileName);
+                    _Wk.Save(sd.FileName, SaveFormat.Excel97To2003);  // 2021-03-16 要求上傳檔案為xls
 
                     if (error_StudentList.Count > 0)
                     {
@@ -325,8 +326,10 @@ namespace ArrangeClass
                 cs[row_counter, 11].Value = className;
                 //座號
                 cs[row_counter, 12].Value = seatNo;
-                //備註
+                //實驗班名稱
                 cs[row_counter, 13].Value = "";
+                //備註
+                cs[row_counter, 14].Value = "";
 
                 //複製第一行樣板
                 Style s = cs[1, 0].GetStyle();
@@ -346,13 +349,18 @@ namespace ArrangeClass
                     cs[row_counter, 11].SetStyle(s);
                     cs[row_counter, 12].SetStyle(s);
                     cs[row_counter, 13].SetStyle(s);
+                    cs[row_counter, 14].SetStyle(s);   
                 }
-
                 row_counter++;
-
                 _BGWClassStudentAbsenceDetail.ReportProgress(50 + (row_counter / target_StudentList.Count) * 40);
             }
             #endregion
+
+            //在「編班名冊」sheet最後一筆的下一列加入End
+            for (int i = 0; i < 15; i++)
+            {
+                cs[row_counter, i].Value = "End";
+            }
 
             // 歸零
             row_counter = 1;
@@ -450,10 +458,12 @@ namespace ArrangeClass
                 cs_errorReport[row_counter, 11].Value = className;
                 //座號
                 cs_errorReport[row_counter, 12].Value = seatNo;
-                //備註
+                //實驗班名稱
                 cs_errorReport[row_counter, 13].Value = "";
+                //備註
+                cs_errorReport[row_counter, 14].Value = "";
                 //錯誤資訊
-                cs_errorReport[row_counter, 14].Value = errorReasonDict[sr.ID];
+                cs_errorReport[row_counter, 15].Value = errorReasonDict[sr.ID];
 
                 //複製第一行樣板
                 Style s = cs_errorReport[1, 0].GetStyle();
@@ -474,6 +484,7 @@ namespace ArrangeClass
                     cs_errorReport[row_counter, 12].SetStyle(s);
                     cs_errorReport[row_counter, 13].SetStyle(s);
                     cs_errorReport[row_counter, 14].SetStyle(s);
+                    cs_errorReport[row_counter, 15].SetStyle(s);
                 } 
                 #endregion
 
