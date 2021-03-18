@@ -113,6 +113,7 @@ namespace UpdateRecordReport
             _DefaultItem.Add("休學:經濟困難", new List<string>(new string[] { "343" }));
             _DefaultItem.Add("休學:兵役", new List<string>(new string[] { "345" }));
             _DefaultItem.Add("休學:出國", new List<string>(new string[] { "348" }));
+            _DefaultItem.Add("休學:缺曠課過多", new List<string>(new string[] { "344" }));
             _DefaultItem.Add("休學:其他", new List<string>(new string[] { "346","347","349" }));
 
             _DefaultItem.Add("復學生", new List<string>(new string[] { "221", "222", "223", "224", "225", "226", "237", "238", "239", "240", }));
@@ -122,6 +123,8 @@ namespace UpdateRecordReport
 
             _DefaultItem.Add("死亡", new List<string>(new string[] { "361" }));
             _DefaultItem.Add("輔導延修", new List<string>(new string[] { "364" }));
+            //_DefaultItem.Add("修業年限期滿", new List<string>(new string[] { "365" }));
+            //_DefaultItem.Add("未達畢業標準", new List<string>(new string[] { "366" }));
             #endregion
 
             //建立異動代碼對照表
@@ -325,7 +328,7 @@ namespace UpdateRecordReport
             Cells cs = ws.Cells;
             int index = 8;
             //需要跳下一行的行數
-            List<int> nextRow = new List<int>(new int[] { 13, 18, 26 });
+            List<int> nextRow = new List<int>(new int[] { 13, 18, 27 });
 
             Dictionary<string, List<RecordObj>> dica = getSortDic(普通科);
             cs[3, 5].PutValue(_SchoolYear + " 學年第 " + _Semester + "     學期");
