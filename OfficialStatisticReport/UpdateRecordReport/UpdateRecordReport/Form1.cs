@@ -100,13 +100,16 @@ namespace UpdateRecordReport
             _DefaultItem.Add("轉出:遷居",new List<string>(new string[]{"311"}));
             _DefaultItem.Add("轉出:家長調職", new List<string>(new string[] { "312" }));
             _DefaultItem.Add("轉出:改變環境", new List<string>(new string[] { "313" }));
-            _DefaultItem.Add("轉出:輔導轉學", new List<string>(new string[] { "315" }));
+            //_DefaultItem.Add("轉出:輔導轉學", new List<string>(new string[] { "315" }));
             _DefaultItem.Add("轉出:其他", new List<string>(new string[] { "314","316" }));
 
-            _DefaultItem.Add("退學:自動退學", new List<string>(new string[] { "321" }));
-            _DefaultItem.Add("退學:休學期滿", new List<string>(new string[] { "323" }));
-            _DefaultItem.Add("退學:未達畢業標準",new List<string>());
-            _DefaultItem.Add("退學:其他", new List<string>(new string[] { "325","326" }));
+            _DefaultItem.Add("放棄、廢止、註銷學籍:主動辦理放棄學籍", new List<string>(new string[] { "367", "369", "378","379" }));//379 不計人數
+            _DefaultItem.Add("放棄、廢止、註銷學籍:因休學期滿而放棄、廢止學籍", new List<string>(new string[] { "380","381" })); //380 不計人數
+            _DefaultItem.Add("放棄、廢止、註銷學籍:其他(含註銷學籍)", new List<string>(new string[] { "374", "375" }));  //375 不計人數
+            //_DefaultItem.Add("退學:自動退學", new List<string>(new string[] { "321" }));
+            //_DefaultItem.Add("退學:休學期滿", new List<string>(new string[] { "323" }));
+            //_DefaultItem.Add("退學:未達畢業標準",new List<string>());
+            //_DefaultItem.Add("退學:其他", new List<string>(new string[] { "325","326" }));
 
             _DefaultItem.Add("休學:因病", new List<string>(new string[] { "341" }));
             _DefaultItem.Add("休學:志趣不合", new List<string>(new string[] { "342" }));
@@ -123,8 +126,10 @@ namespace UpdateRecordReport
 
             _DefaultItem.Add("死亡", new List<string>(new string[] { "361" }));
             _DefaultItem.Add("輔導延修", new List<string>(new string[] { "364" }));
-            //_DefaultItem.Add("修業年限期滿", new List<string>(new string[] { "365" }));
+            _DefaultItem.Add("修業年限期滿", new List<string>(new string[] { "365" }));
             //_DefaultItem.Add("未達畢業標準", new List<string>(new string[] { "366" }));
+
+            _DefaultItem.Add("未達畢業標準(指德性評量) ", new List<string>(new string[] { "366" }));
             #endregion
 
             //建立異動代碼對照表
@@ -328,7 +333,8 @@ namespace UpdateRecordReport
             Cells cs = ws.Cells;
             int index = 8;
             //需要跳下一行的行數
-            List<int> nextRow = new List<int>(new int[] { 13, 18, 27 });
+            //List<int> nextRow = new List<int>(new int[] { 13, 18, 27 });
+            List<int> nextRow = new List<int>(new int[] { 12, 16, 25 });
 
             Dictionary<string, List<RecordObj>> dica = getSortDic(普通科);
             cs[3, 5].PutValue(_SchoolYear + " 學年第 " + _Semester + "     學期");
@@ -644,7 +650,11 @@ namespace UpdateRecordReport
                 }
             }
         }
-
+        /// <summary>
+        /// 重設
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             try
