@@ -1758,107 +1758,107 @@ namespace myTable
                     Collect_BeforeSchoolLocationList["新北市"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "臺北市")
+                else if (student.Before_School_Location == "臺北市")
                 {
                     Collect_BeforeSchoolLocationList["臺北市"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "臺中市")
+                else if (student.Before_School_Location == "臺中市")
                 {
                     Collect_BeforeSchoolLocationList["臺中市"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "臺南市")
+                else if (student.Before_School_Location == "臺南市")
                 {
                     Collect_BeforeSchoolLocationList["臺南市"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "高雄市")
+                else if (student.Before_School_Location == "高雄市")
                 {
                     Collect_BeforeSchoolLocationList["高雄市"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "宜蘭縣")
+                else if (student.Before_School_Location == "宜蘭縣")
                 {
                     Collect_BeforeSchoolLocationList["宜蘭縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "桃園市")
+                else if (student.Before_School_Location == "桃園市")
                 {
                     Collect_BeforeSchoolLocationList["桃園市"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "新竹縣")
+                else if (student.Before_School_Location == "新竹縣")
                 {
                     Collect_BeforeSchoolLocationList["新竹縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "苗栗縣")
+                else if (student.Before_School_Location == "苗栗縣")
                 {
                     Collect_BeforeSchoolLocationList["苗栗縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "彰化縣")
+                else if (student.Before_School_Location == "彰化縣")
                 {
                     Collect_BeforeSchoolLocationList["彰化縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "南投縣")
+                else if (student.Before_School_Location == "南投縣")
                 {
                     Collect_BeforeSchoolLocationList["南投縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "雲林縣")
+                else if (student.Before_School_Location == "雲林縣")
                 {
                     Collect_BeforeSchoolLocationList["雲林縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "嘉義縣")
+                else if (student.Before_School_Location == "嘉義縣")
                 {
                     Collect_BeforeSchoolLocationList["嘉義縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "屏東縣")
+                else if (student.Before_School_Location == "屏東縣")
                 {
                     Collect_BeforeSchoolLocationList["屏東縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "臺東縣")
+                else if (student.Before_School_Location == "臺東縣")
                 {
                     Collect_BeforeSchoolLocationList["臺東縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "花蓮縣")
+                else if (student.Before_School_Location == "花蓮縣")
                 {
                     Collect_BeforeSchoolLocationList["花蓮縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "澎湖縣")
+                else if (student.Before_School_Location == "澎湖縣")
                 {
                     Collect_BeforeSchoolLocationList["澎湖縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "基隆市")
+                else if (student.Before_School_Location == "基隆市")
                 {
                     Collect_BeforeSchoolLocationList["基隆市"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "新竹市")
+                else if (student.Before_School_Location == "新竹市")
                 {
                     Collect_BeforeSchoolLocationList["新竹市"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "嘉義市")
+                else if (student.Before_School_Location == "嘉義市")
                 {
                     Collect_BeforeSchoolLocationList["嘉義市"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "金門縣")
+                else if (student.Before_School_Location == "金門縣")
                 {
                     Collect_BeforeSchoolLocationList["金門縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
                 }
-                if (student.Before_School_Location == "連江縣")
+                else if (student.Before_School_Location == "連江縣")
                 {
                     Collect_BeforeSchoolLocationList["連江縣"].Add(student);
                     Collect_BeforeSchoolLocationList["總計"].Add(student);
