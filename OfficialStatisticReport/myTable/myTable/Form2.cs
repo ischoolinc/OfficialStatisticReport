@@ -35,6 +35,8 @@ namespace myTable
         String dept;
         Workbook _wk;
 
+        //Dictionary<string, string> _ClassTypeCodeDic;
+
         public Form2()
         {
             InitializeComponent();
@@ -56,8 +58,28 @@ namespace myTable
             //LoadLastRecord(); //舊CODE 方法，不再使用，故註解。
 
             LoadConfigXml();
+
+            LoadClassTypeCodeDic();
         }
 
+        private void LoadClassTypeCodeDic()
+        {
+            //_ClassTypeCodeDic.Clear();
+            //_ClassTypeCodeDic.Add("1", "日間部");
+            //_ClassTypeCodeDic.Add("2", "夜間部");
+            //_ClassTypeCodeDic.Add("3", "實用技能學程(一般班)");
+            //_ClassTypeCodeDic.Add("4", "建教班");
+            //_ClassTypeCodeDic.Add("6", "產學訓合作計畫班(產學合作班)");
+            //_ClassTypeCodeDic.Add("7", "重點產業班/台德菁英班/雙軌旗艦訓練計畫專班");
+            //_ClassTypeCodeDic.Add("8", "建教僑生專班");
+            //_ClassTypeCodeDic.Add("9", "實驗班");
+            //_ClassTypeCodeDic.Add("01", "進修部(核定班)");
+            //_ClassTypeCodeDic.Add("02", "編制班");
+            //_ClassTypeCodeDic.Add("03", "自給自足班");
+            //_ClassTypeCodeDic.Add("04", "員工進修班");
+            //_ClassTypeCodeDic.Add("05", "重點產業班");
+            //_ClassTypeCodeDic.Add("06", "產業人力套案專班");
+        }
         private void LoadConfigXml()
         {
             ConfigData cd = K12.Data.School.Configuration["新生入學統計報表_來源目標設定Config"];
@@ -568,7 +590,7 @@ namespace myTable
             _BGWClassStudentAbsenceDetail.RunWorkerCompleted += new RunWorkerCompletedEventHandler(_BGWClassStudentAbsenceDetail_Completed);
             this.picLoding.Visible = true;
             _BGWClassStudentAbsenceDetail.RunWorkerAsync();
-            
+
         }
 
         private void _BGWClassStudentAbsenceDetail_Completed(object sender, RunWorkerCompletedEventArgs e)
@@ -607,7 +629,7 @@ namespace myTable
 
         private void _BGWClassStudentAbsenceDetail_DoWork(object sender, DoWorkEventArgs e)
         {
-           
+
             Dictionary<String, myStudent> myDic = new Dictionary<string, myStudent>();
             List<myStudent> mylist = new List<myStudent>();
             QueryHelper _Q = new QueryHelper();
@@ -616,7 +638,43 @@ namespace myTable
             //DataTable dt = _Q.Select("select student.id,student.name,student.gender,student.permanent_address,student.ref_class_id,student.status,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id from student left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id left join tag_student on student.id= tag_student.ref_student_id where student.status in ('1','4','16') and class.grade_year='1'");
 
             //2017/1/17 穎驊改寫修正， 上面的SQL 僅會抓取學生 所屬班級上的 科別 ，而不會抓學生身上自己設定的科別 ， 現在該改SQL，  優先先抓取學生自己的科別。 若無 則以 班級設定的科別帶入。
-            DataTable dt = _Q.Select("select student.id,student.name,student.gender,student.permanent_address,student.ref_class_id,student.status,student.ref_dept_id as student_ref_dept_id,class.ref_dept_id as class_ref_dept_id ,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id from student left join class on student.ref_class_id=class.id  left join dept on  case    when student.ref_dept_id is null   then class.ref_dept_id=dept.id   else student.ref_dept_id=dept.id  end left join tag_student on student.id= tag_student.ref_student_id where student.status in ('1','4','16') and class.grade_year='1'");
+            //2022-07-12 Cynthia  將新生異動的班別也讀出來 
+            //DataTable dt = _Q.Select("select student.id,student.name,student.gender,student.permanent_address,student.ref_class_id,student.status,student.ref_dept_id as student_ref_dept_id,class.ref_dept_id as class_ref_dept_id ,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id from student left join class on student.ref_class_id=class.id  left join dept on  case    when student.ref_dept_id is null   then class.ref_dept_id=dept.id   else student.ref_dept_id=dept.id  end left join tag_student on student.id= tag_student.ref_student_id where student.status in ('1','4','16') and class.grade_year='1'");
+            string sql = @"WITH update_record_info AS(
+	SELECT 
+		ref_student_id
+		, school_year
+		, update_desc
+		, code
+		, array_to_string(xpath('//ClassType/text()', ClassTypesEle), '') AS Class_Type
+	FROM 
+		(
+			SELECT *
+				, CAST(update_code AS INT) AS code
+				, unnest(xpath('//ContextInfo/ClassType', xmlparse(content context_info))) AS ClassTypesEle
+			FROM 
+				update_record 
+			WHERE
+				CAST(update_code AS INT) <100 AND school_year ={0} 
+		) AS record
+)
+SELECT 
+student.id,student.name,student.gender,student.permanent_address,student.ref_class_id,student.status
+,student.ref_dept_id as student_ref_dept_id,class.ref_dept_id as class_ref_dept_id 
+,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id 
+, update_record_info.code
+, TRIM(update_record_info.Class_Type) AS Class_Type
+FROM student 
+left join class on student.ref_class_id=class.id  
+left join dept on  case  when student.ref_dept_id is null   then class.ref_dept_id=dept.id   else student.ref_dept_id=dept.id  end 
+left join tag_student on student.id= tag_student.ref_student_id 
+left join update_record_info on student.id=update_record_info.ref_student_id 
+WHERE student.status in ('1','4','16') and class.grade_year='1'
+ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
+            sql = string.Format(sql, _SchoolYear);
+            DataTable dt = _Q.Select(sql);
+
+
             int num = 0;
             //建立myStuden物件放至List中
             foreach (DataRow row in dt.Rows)
@@ -629,6 +687,7 @@ namespace myTable
                 String grade_year = row["grade_year"].ToString();
                 String dept_name = row["dept_name"].ToString();
                 String ref_tag_id = row["ref_tag_id"].ToString();
+                String classType = row["Class_Type"].ToString(); //班別
 
                 //戶籍 縣市
                 String Before_School_Location = "";
@@ -671,7 +730,7 @@ namespace myTable
                     //{
                     //    string location = Before_School_Location;
                     //}
-                    myDic.Add(id, new myStudent(id, name, gender, ref_class_id, class_name, grade_year, dept_name, County, Before_School_Location, new List<string>()));
+                    myDic.Add(id, new myStudent(id, name, gender, ref_class_id, class_name, grade_year, dept_name, County, Before_School_Location, classType, new List<string>()));
                 }
                 myDic[id].Tag.Add(ref_tag_id);
                 num++;
@@ -689,7 +748,7 @@ namespace myTable
 
             filter = new Filter(mylist, dept);
             Export();
-            
+
         }
 
         //確認學生為一般新生,排除重讀生等其他狀態
@@ -780,6 +839,7 @@ namespace myTable
             cs["D1"].PutValue("班級名稱");
             cs["E1"].PutValue("年級");
             cs["F1"].PutValue("科別名稱");
+            cs["G1"].PutValue("班別");
             //cs["H1"].PutValue("ref_tag_id");
             index = 1;
             foreach (myStudent s in filter.error_list)
@@ -791,6 +851,7 @@ namespace myTable
                 cs[index, 3].PutValue(s.Class_name);
                 cs[index, 4].PutValue(s.Grade_year);
                 cs[index, 5].PutValue(s.Dept_name);
+                cs[index, 6].PutValue(s.Class_Type);
                 //String column7 = "";
                 //foreach (String l in s.Tag)
                 //{
@@ -1038,20 +1099,25 @@ namespace myTable
             cs = ws.Cells;
 
             index = 12;
-        //todo 
+            //todo 
             int col = 10;
 
             int flexInsex = 1; //因為樣板不是每一項都是佔1格 ，有些有二合一合併，所以靠一個參數彈性調整(可以自行 去看 Resource/ template(105.7ver) 內有許多 合併欄位)
 
             List<myStudent> summary = new List<myStudent>(); //建立summary清單收集dic_byDept的展開學生物件
 
-            // 每一科別的整理
-            foreach (KeyValuePair<String, List<myStudent>> k in filter.dic_byDept)
+            #region 每一科別+班別的整理 
+            //dept_ClassTypeDic //dic_byDept
+            foreach (KeyValuePair<String, List<myStudent>> k in filter.dept_ClassTypeDic)
             {
-                 col = 10;
+                string[] keyArray = k.Key.Split('⊕');
+                col = 10;
                 //Table1 Left
                 cs[index, 1].PutValue(filter.getDeptCode(k.Key)); //科別代碼
-                cs[index, 2].PutValue(k.Key); //科別名稱
+                cs[index, 2].PutValue(keyArray[0]); //科別名稱
+                if (keyArray.Length >= 2)
+                    if (filter.ClassTypeCodeDic.ContainsKey(keyArray[1]))
+                        cs[index, 3].PutValue(filter.ClassTypeCodeDic[keyArray[1]]); //班別名稱
                 cs[index, 6].PutValue(filter.getClassCount(k.Value)); //實際招生班數
                 cs[index, 7].PutValue(k.Value.Count); //學生總計數
                 cs[index, 8].PutValue(filter.getGenderCount(k.Value, "1")); //男生總數
@@ -1186,6 +1252,7 @@ namespace myTable
 
                 index++; //每做完一次k.value即換行
             }
+            #endregion
 
             //Table2 Left
             //Dictionary<String, List<String>> table2Left = new Dictionary<string, List<String>>();

@@ -9,12 +9,12 @@ namespace myTable
     class myStudent
     {
         //學生物件存放個資料
-        private String id, name, gender, ref_class_id, class_name, grade_year, dept_name,county,before_school_location;
+        private String id, name, gender, ref_class_id, class_name, grade_year, dept_name,county,before_school_location, class_type;
 
         
         private List<String> tag;
 
-        public myStudent(String id, String name, String gender, String ref_class_id, String class_name, String grade_year, String dept_name, String county,String before_school_location, List<String> tag)
+        public myStudent(String id, String name, String gender, String ref_class_id, String class_name, String grade_year, String dept_name, String county,String before_school_location, String class_type, List<String> tag)
         {
             this.id = id;
             this.name = name;
@@ -25,6 +25,7 @@ namespace myTable
             this.dept_name = dept_name;
             this.county = county;
             this.before_school_location = before_school_location;
+            this.class_type = class_type;
             this.tag = tag;
         }
 
@@ -81,6 +82,12 @@ namespace myTable
         {
             get { return before_school_location; }
             set { before_school_location = value; }
+        }
+
+        public String Class_Type
+        {
+            get { return class_type; }
+            set { class_type = value; }
         }
 
         public List<String> Tag
