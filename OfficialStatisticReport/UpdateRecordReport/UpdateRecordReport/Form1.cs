@@ -162,7 +162,7 @@ namespace UpdateRecordReport
                         if (elem.InnerText == "學籍異動" || elem.InnerText == "轉入異動")
                         {
                             //延修代碼不可為選項
-                            if (code != "235" && code != "236") mustAdd = true;
+                            if (code != "235" && code != "236" && code != "243" && code != "244") mustAdd = true;
                         } 
                     }
                 }
@@ -219,7 +219,7 @@ namespace UpdateRecordReport
             Dictionary<string, RecordObj> RecordObjDic = new Dictionary<string, RecordObj>();
 
             //組SQL(強制加入501,235,236)
-            string updateCode = "'501','235','236','"; //畢業,延修一,延修二
+            string updateCode = "'501','235','236','243','244','"; //畢業,延修一,延修二
             foreach (List<string> codes in _MappingData.Values)
             {
                 foreach(string s in codes)
@@ -255,7 +255,7 @@ namespace UpdateRecordReport
                 }
 
                 //有235或236代碼且不存在於delayList者,sid加入清單
-                if ((code == "235" || code == "236") && !delayList.Contains(sid))
+                if ((code == "235" || code == "236" || code == "243" || code == "244") && !delayList.Contains(sid))
                 {
                     delayList.Add(sid);
                 }
@@ -280,7 +280,7 @@ namespace UpdateRecordReport
                 //學生系統編號存在於delayList者,且代碼為235或236不做處理
                 if (delayList.Contains(k.Value.Student_id))
                 {
-                    if (k.Value.Code == "235" || k.Value.Code == "236")
+                    if (k.Value.Code == "235" || k.Value.Code == "236" || k.Value.Code == "243" || k.Value.Code == "244")
                     {
                         continue;
                     }
@@ -304,8 +304,13 @@ namespace UpdateRecordReport
                 //canPass為false者跳過不處理
                 if (!canPass) continue;
 
-                //性別為男或女且有正確(1~4)年級者才處理,否則加入錯誤清單
-                if ((k.Value.Gender == "1" || k.Value.Gender == "0") && (k.Value.Grade == "1" || k.Value.Grade == "2" || k.Value.Grade == "3" || k.Value.Grade == "4"))
+                // 2022-08-30 只要異動是"延修生" 就直接視為延修生
+                if (k.Value.Grade == "-1")
+                    k.Value.Delay = true;
+
+
+                //性別為男或女且有正確(1~4)年級者才處理,否則加入錯誤清單 //2022/8/26 將 "-1" 延修生也列為正確
+                if ((k.Value.Gender == "1" || k.Value.Gender == "0") && (k.Value.Grade == "1" || k.Value.Grade == "2" || k.Value.Grade == "3" || k.Value.Grade == "4" || k.Value.Grade == "-1"))
                 {
                     _CleanList.Add(k.Value);
                 }
