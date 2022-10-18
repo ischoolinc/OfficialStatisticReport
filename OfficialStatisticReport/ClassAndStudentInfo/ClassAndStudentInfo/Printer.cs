@@ -71,8 +71,23 @@ namespace ClassAndStudentInfo
             QueryDeptCode(); //建立科別代號表
 
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
-            DataTable dt = _Q.Select("select student.id,student.name,student.ref_class_id,student.status,gender,class.grade_year,dept.name as dept_name from student join class on student.ref_class_id=class.id join dept on class.ref_dept_id=dept.id");
-            List<StudentObj> StudentList = new List<StudentObj>();
+            //DataTable dt = _Q.Select("select student.id,student.name,student.ref_class_id,student.status,gender,class.grade_year,dept.name as dept_name from student join class on student.ref_class_id=class.id join dept on class.ref_dept_id=dept.id");
+            string sql = @"WITH student_data AS (
+SELECT 
+	student.id,student.name,student.ref_class_id,student.status,gender,class.grade_year 
+	, COALESCE(student.ref_dept_id,class.ref_dept_id ) AS _dept
+FROM 
+	student JOIN class ON student.ref_class_id=class.id 
+)
+SELECT 
+	student_data.*
+	, dept.name AS dept_name
+FROM 
+	student_data
+JOIN 
+	dept ON student_data._dept=dept.id";
+            DataTable dt = _Q.Select(sql);
+            List <StudentObj> StudentList = new List<StudentObj>();
             foreach (DataRow row in dt.Rows)
             {
                 StudentObj obj = new StudentObj(row);
