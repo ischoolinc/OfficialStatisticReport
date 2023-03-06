@@ -23,6 +23,9 @@ namespace ArrangeClass
 
         private List<string> _ErrorList, _CorrectList;
 
+        //取得班級名稱對照設定檔
+        Dictionary<string, string> _ClassNameMappingDict = QueryTransfer.GetConfigure();
+
         //有錯誤不完整資料的學生
         List<SHSchool.Data.SHStudentRecord> error_StudentList = new List<SHSchool.Data.SHStudentRecord>();
 
@@ -37,7 +40,7 @@ namespace ArrangeClass
             //由於本功能報表需要一段時間產生，先關閉按鈕功能，怕使用者連續點取兩下            
             item1["報表"]["編班名冊"].Enable = false;
 
-            FISCA.Presentation.MotherForm.SetStatusBarMessage("正在產生編班名冊...",0);
+            FISCA.Presentation.MotherForm.SetStatusBarMessage("正在產生編班名冊...", 0);
             _BGWClassStudentAbsenceDetail = new BackgroundWorker();
             _BGWClassStudentAbsenceDetail.DoWork += new DoWorkEventHandler(_BGWClassStudentAbsenceDetail_DoWork);
             _BGWClassStudentAbsenceDetail.WorkerReportsProgress = true;
@@ -96,7 +99,7 @@ namespace ArrangeClass
             List<SHSchool.Data.SHStudentRecord> all_StudentList = SHSchool.Data.SHStudent.SelectAll();
             //整理後的學生
             List<SHSchool.Data.SHStudentRecord> target_StudentList = new List<SHSchool.Data.SHStudentRecord>();
-            
+
             //學生資料錯誤的原因
             Dictionary<string, string> errorReasonDict = new Dictionary<string, string>();
 
@@ -323,7 +326,7 @@ namespace ArrangeClass
                 //年級
                 cs[row_counter, 10].Value = grade;
                 //班級名稱
-                cs[row_counter, 11].Value = className;
+                cs[row_counter, 11].Value = (_ClassNameMappingDict.ContainsKey(className) ? _ClassNameMappingDict[className] : className);
                 //座號
                 cs[row_counter, 12].Value = seatNo;
                 //實驗班名稱
@@ -349,7 +352,7 @@ namespace ArrangeClass
                     cs[row_counter, 11].SetStyle(s);
                     cs[row_counter, 12].SetStyle(s);
                     cs[row_counter, 13].SetStyle(s);
-                    cs[row_counter, 14].SetStyle(s);   
+                    cs[row_counter, 14].SetStyle(s);
                 }
                 row_counter++;
                 _BGWClassStudentAbsenceDetail.ReportProgress(50 + (row_counter / target_StudentList.Count) * 40);
@@ -485,7 +488,7 @@ namespace ArrangeClass
                     cs_errorReport[row_counter, 13].SetStyle(s);
                     cs_errorReport[row_counter, 14].SetStyle(s);
                     cs_errorReport[row_counter, 15].SetStyle(s);
-                } 
+                }
                 #endregion
 
                 row_counter++;
@@ -501,11 +504,11 @@ namespace ArrangeClass
 
         }
 
-       
+
         //建立科別代號表
         public void QueryDeptCode()
         {
-            
+
             QueryHelper _Q = new QueryHelper();
             DataTable dt = _Q.Select("select id,code,name from dept");
             foreach (DataRow row in dt.Rows)
@@ -516,7 +519,7 @@ namespace ArrangeClass
                 if (!Dept_ref.ContainsKey(id))
                 {
                     Dept_ref.Add(id, code);
-                }                
+                }
             }
         }
 
@@ -532,6 +535,6 @@ namespace ArrangeClass
             }
             return code;
         }
-        
+
     }
 }

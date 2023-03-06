@@ -19,8 +19,11 @@ namespace ArrangeClass
             item1["報表"]["編班名冊"].Enable = Permissions.編班名冊權限;
             item1["報表"]["編班名冊"].Click += delegate
             {
-                Printer printer = new Printer();
-                printer.Start();
+                //Printer printer = new Printer();
+                //printer.Start();
+
+                PrintForm printForm = new PrintForm();
+                printForm.ShowDialog();
             };
 
             //權限設定
