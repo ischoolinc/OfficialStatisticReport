@@ -121,7 +121,7 @@ namespace UpdateRecordReport
 
             _DefaultItem.Add("復學生", new List<string>(new string[] { "221", "222", "223", "224", "225", "226", "237", "238", "239", "240", }));
 
-            _DefaultItem.Add("轉入:他校轉入", new List<string>(new string[] { "111", "112", "113", "114", "115", "121", "122", "123", "124", }));
+            _DefaultItem.Add("轉入:他校轉入", new List<string>(new string[] { "111", "112", "113", "114", "115", "121", "122", "123", "124","131","141","142","143","144" }));
             _DefaultItem.Add("轉入:本校不同學制轉入",new List<string>());
 
             _DefaultItem.Add("死亡", new List<string>(new string[] { "361" }));
