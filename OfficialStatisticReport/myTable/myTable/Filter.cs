@@ -81,6 +81,10 @@ namespace myTable
                 case "職業科":
                     foreach (myStudent s in clean_list)
                     {
+                        // 不包含實用技能學程(一般班)
+                        if (s.Class_Type == "3")
+                            continue;
+
                         //科別⊕班別
                         string key = s.Dept_name + "⊕" + s.Class_Type;
 
@@ -112,6 +116,10 @@ namespace myTable
 
                     foreach (myStudent s in error_list)
                     {
+                        // 不包含實用技能學程(一般班)
+                        if (s.Class_Type == "3")
+                            continue;
+
                         if (!s.Dept_name.Contains("普通科") && !s.Dept_name.Contains("綜合高中科"))
                         {
                             new_error_list.Add(s);
@@ -122,9 +130,66 @@ namespace myTable
 
                     break;
 
+                case "實用技能學程":
+                    foreach (myStudent s in clean_list)
+                    {
+                        // 實用技能學程(一般班)
+                        if (s.Class_Type == "3")
+                        {
+                            //科別⊕班別
+                            string key = s.Dept_name + "⊕" + s.Class_Type;
+
+                            if (!s.Dept_name.Contains("普通科") && !s.Dept_name.Contains("綜合高中科"))
+                            {
+                                if (!dic_byDept.ContainsKey(s.Dept_name))
+                                {
+                                    dic_byDept.Add(s.Dept_name, new List<myStudent>());
+                                }
+                                dic_byDept[s.Dept_name].Add(s);
+
+                                if (!dept_ClassTypeDic.ContainsKey(key))
+                                {
+                                    dept_ClassTypeDic.Add(key, new List<myStudent>());
+                                }
+                                dept_ClassTypeDic[key].Add(s);
+                                #region deptClassTypeDic
+                                if (!deptClassTypeDic.ContainsKey(s.Dept_name))
+                                {
+                                    deptClassTypeDic.Add(s.Dept_name, new Dictionary<string, List<myStudent>>());
+                                }
+                                if (!deptClassTypeDic[s.Dept_name].ContainsKey(s.Class_Type))
+                                    deptClassTypeDic[s.Dept_name].Add(s.Class_Type, new List<myStudent>());
+                                deptClassTypeDic[s.Dept_name][s.Class_Type].Add(s);
+                                #endregion
+
+                            }
+
+                        }
+                    }
+
+                    foreach (myStudent s in error_list)
+                    {
+                        // 不包含實用技能學程(一般班)
+                        if (s.Class_Type == "3")
+                        {
+                            if (!s.Dept_name.Contains("普通科") && !s.Dept_name.Contains("綜合高中科"))
+                            {
+                                new_error_list.Add(s);
+                            }
+                        }                        
+                    }
+
+                    error_list = new_error_list;
+
+                    break;
+
                 default:
                     foreach (myStudent s in clean_list)
                     {
+                        // 不包含實用技能學程(一般班)
+                        if (s.Class_Type == "3")
+                            continue;
+
                         //科別⊕班別
                         string key = s.Dept_name + "⊕" + s.Class_Type;
 
@@ -147,6 +212,10 @@ namespace myTable
 
                     foreach (myStudent s in error_list)
                     {
+                        // 不包含實用技能學程(一般班)
+                        if (s.Class_Type == "3")
+                            continue;
+
                         if (s.Dept_name.Contains(dept))
                         {
                             new_error_list.Add(s);
