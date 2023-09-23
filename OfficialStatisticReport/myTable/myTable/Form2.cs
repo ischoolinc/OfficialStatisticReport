@@ -1412,7 +1412,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 }
                 else
                 {
-                    if (col == 36)
+                    if (col == 44)
                     {
                         col = col + 3;
                         flexInsex = 1;
@@ -1629,7 +1629,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 }
                 else
                 {
-                    if (col == 36)
+                    if (col == 44)
                     {
                         col = col + 3;
                         flexInsex = 1;
