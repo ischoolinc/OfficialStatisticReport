@@ -9,7 +9,7 @@ namespace UpdateRecordReport
 {
     class RecordObj
     {
-        private string id, student_id, name, student_number, gender, grade, dept, code;
+        private string id, student_id, name, student_number, gender, grade, dept, code,status;
         private bool delay;
 
         public RecordObj(DataRow row)
@@ -22,6 +22,7 @@ namespace UpdateRecordReport
             this.grade = row["ss_grade_year"].ToString();
             this.dept = row["ss_dept"].ToString();
             this.code = row["update_code"].ToString();
+            this.status = row["status"].ToString();
             this.delay = false;
         }
 
@@ -72,7 +73,11 @@ namespace UpdateRecordReport
             get { return code; }
             set { code = value; }
         }
-
+        public string Status
+        {
+            get { return status; }
+            set { status = value; }
+        }
         public bool Delay
         {
             get { return delay; }

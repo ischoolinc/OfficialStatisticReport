@@ -5,6 +5,7 @@ using System.Text;
 using FISCA.Permission;
 using FISCA;
 using K12.Data;
+using FISCA.Presentation;
 
 namespace ClassAndStudentInfo
 {
@@ -13,20 +14,15 @@ namespace ClassAndStudentInfo
         [MainMethod()]
         public static void Main()
         {
+            var key = "6D095778-8617-4DEB-A457-7E0E642E765A";
+            RoleAclSource.Instance["教務作業"]["功能按鈕"].Add(new RibbonFeature(key, "高中職學校班級及學生概況（一）權限"));
+            MotherForm.RibbonBarItems["教務作業", "資料統計"]["報表"]["高中職學校班級及學生概況（一）"].Enable = FISCA.Permission.UserAcl.Current[key].Executable;
 
-            FISCA.Presentation.RibbonBarItem item1 = FISCA.Presentation.MotherForm.RibbonBarItems["教務作業", "資料統計"];
-            item1["報表"].Image = Properties.Resources.Report;
-            item1["報表"].Size = FISCA.Presentation.RibbonBarButton.MenuButtonSize.Large;
-            item1["報表"]["班級及學生概況1"].Enable = Permissions.班級及學生概況1權限;
-            item1["報表"]["班級及學生概況1"].Click += delegate
+            MotherForm.RibbonBarItems["教務作業", "資料統計"]["報表"]["高中職學校班級及學生概況（一）"].Click += delegate
             {
-                Printer printer = new Printer();
-                printer.Start();
+                PrintBranch PrintBranch = new PrintBranch();
+                PrintBranch.Show();
             };
-
-            //權限設定
-            Catalog permission = RoleAclSource.Instance["教務作業"]["功能按鈕"];
-            permission.Add(new RibbonFeature(Permissions.班級及學生概況1, "班級及學生概況1"));
 
         }
     }

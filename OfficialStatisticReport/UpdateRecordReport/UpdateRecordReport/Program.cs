@@ -4,27 +4,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using FISCA;
+using FISCA.Presentation;
 namespace UpdateRecordReport
 {
     public class Program
     {
-        [FISCA.MainMethod]
+        [MainMethod]
         public static void main()
         {
-            FISCA.Presentation.RibbonBarItem item1 = FISCA.Presentation.MotherForm.RibbonBarItems["教務作業", "資料統計"];
-            item1["報表"].Image = Properties.Resources.Report;
-            item1["報表"].Size = FISCA.Presentation.RibbonBarButton.MenuButtonSize.Large;
-            item1["報表"]["高中職學校學生異動報告"].Enable = Permissions.高中職學校學生異動報告權限;
-            item1["報表"]["高中職學校學生異動報告"].Click += delegate
-            {
-                Form1 fm = new Form1();
-                fm.ShowDialog();
-            };
+            var key = "F6AD4FC5-7792-47F8-8714-9D7F1D9D441A";
+            RoleAclSource.Instance["教務作業"]["功能按鈕"].Add(new RibbonFeature(key, "高級中等學校學生異動概況權限"));
+            MotherForm.RibbonBarItems["教務作業", "資料統計"]["報表"]["高級中等學校學生異動概況"].Enable = FISCA.Permission.UserAcl.Current[key].Executable;
 
-            //權限設定
-            Catalog permission = RoleAclSource.Instance["教務作業"]["功能按鈕"];
-            permission.Add(new RibbonFeature(Permissions.高中職學校學生異動報告, "高中職學校學生異動報告"));
+            MotherForm.RibbonBarItems["教務作業", "資料統計"]["報表"]["高級中等學校學生異動概況"].Click += delegate
+            {
+                PrintBranch PrintBranch = new PrintBranch();
+                PrintBranch.Show();
+            };
         }
     }
 }
