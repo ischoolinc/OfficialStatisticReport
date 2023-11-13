@@ -23,14 +23,22 @@ namespace OverseasChineseStudent
         Dictionary<String, List<String>> _mappingData;//mapping資料
         List<String> _TagIDList; //被選取到的TagID總表,排除學生清單用
         List<myStudent> _CleanList, _ErrorList, 普通科, 綜合高中科, 職業科;
-        List<GraduateStudentObj> _GraduateStudentList,_GCleanList, _GErrorList;
+        List<GraduateStudentObj> _GraduateStudentList, _GCleanList, _GErrorList;
+        List<CompletionStudentObj> _CompletionStudentList, _CCleanList, _CErrorList;
         private BackgroundWorker _BGW; //背景模式
+        string Public_BranchID;
+        string Public_BranchName;
+        
         Workbook _wk;
         String _SchoolYear;
 
-        public Form1()
+        Boolean chkUnGraduate;
+        public Form1(string BranchID, string BranchName, Boolean UnGraduate)
         {
             InitializeComponent();
+            Public_BranchID = BranchID;
+            Public_BranchName = BranchName;
+            chkUnGraduate = UnGraduate;
             Column1Prepare();
             Column2Prepare();
             LoadLastRecord();
@@ -231,8 +239,8 @@ namespace OverseasChineseStudent
 
             SaveFileDialog sd = new System.Windows.Forms.SaveFileDialog();
             sd.Title = "另存新檔";
-            sd.FileName = "僑生統計表.xls";
-            sd.Filter = "Excel檔案 (*.xls)|*.xls|所有檔案 (*.*)|*.*";
+            sd.FileName = "僑生統計表.xlsx";
+            sd.Filter = "Excel檔案 (*.xlsx)|*.xlsx|所有檔案 (*.*)|*.*";
             if (sd.ShowDialog() == DialogResult.OK)
             {
                 try
@@ -243,7 +251,7 @@ namespace OverseasChineseStudent
                         MessageBox.Show("發現" + (_ErrorList.Count + _GErrorList.Count) + "筆異常資料未列入統計\r\n詳細資料請確認報表中的[異常資料表]");
                     }
                     System.Diagnostics.Process.Start(sd.FileName);
-
+                    this.Close();
                 }
                 catch
                 {
@@ -258,13 +266,14 @@ namespace OverseasChineseStudent
         {
             _SchoolYear = K12.Data.School.DefaultSchoolYear;
             _GraduateStudentList = getGraduateStudent();
-
+            _CompletionStudentList = getCompletionStudent();
             Dictionary<String, myStudent> myDic = new Dictionary<string, myStudent>();
             List<myStudent> mylist = new List<myStudent>();
             QueryHelper _Q = new QueryHelper();
 
             //SQL查詢要求的年級資料
-            DataTable dt = _Q.Select("select student.id,student.name,student.student_number,student.gender,student.ref_class_id,student.status,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id from student left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id left join tag_student on student.id= tag_student.ref_student_id where student.status in ('1','2')");
+            string sql = "select student.id,student.name,student.student_number,student.gender,student.ref_class_id,student.status,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id from student left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id left join tag_student on student.id= tag_student.ref_student_id where student.status in ('1','2') AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")";
+            DataTable dt = _Q.Select(sql);
 
             //建立myStuden物件放至List中
             foreach (DataRow row in dt.Rows)
@@ -303,19 +312,26 @@ namespace OverseasChineseStudent
                 if (!TagIDExistence(s)) continue; //無資料不需要加入就換下一個學生
 
                 //按照資料的正確性分別加入Error或CleanList
-                if (s.Id == "" || s.Name == "" || (s.Gender != "0" && s.Gender != "1") || s.Ref_class_id == "" || s.Class_name == "" || s.Grade_year == "" || s.Dept_name == "")
+                if (s.Id == "" || s.Name == "" || (s.Gender != "0" && s.Gender != "1") || s.Ref_class_id == "" || s.Class_name == "" || s.Dept_name == "")
                 {
+
                     _ErrorList.Add(s);
                 }
                 else
                 {
-                    _CleanList.Add(s);
+                    if (s.Grade_year == "")
+                        if (s.Status != "2")
+                            _ErrorList.Add(s);
+                        else
+                            _CleanList.Add(s);
+                    else
+                        _CleanList.Add(s);
                 }
             }
 
-            普通科 = getStudentListByDept("普通科");
-            綜合高中科 = getStudentListByDept("綜合高中科");
-            職業科 = getStudentListByDept("職業科");
+            //普通科 = getStudentListByDept("普通科");
+            //綜合高中科 = getStudentListByDept("綜合高中科");
+            //職業科 = getStudentListByDept("職業科");
         }
 
         private void Export()
@@ -325,10 +341,15 @@ namespace OverseasChineseStudent
             wk2.Open(new MemoryStream(Properties.Resources.Template)); //開啟範本文件
             _wk.Worksheets[0].Copy(wk2.Worksheets[0]); //複製範本文件
             Worksheet ws = _wk.Worksheets[0];
-            ws.Name = "普通科";
+            ws.Name = Public_BranchName;
             Cells cs = ws.Cells;
             int index = 9;
-            Dictionary<String, List<myStudent>> dica = getStudentDic(普通科);
+            Dictionary<String, List<myStudent>> dica = getStudentDic(_CleanList);
+            cs[0, 18].PutValue(K12.Data.School.ChineseName + "(教務處)");
+            cs[2, 0].PutValue("表 - 10 高級中等學校僑生及大陸和港澳地區學生統計─"+Public_BranchName);
+            cs[3, 7].PutValue(_SchoolYear);
+            cs[4, 0].PutValue(K12.Data.School.Code);
+            cs[4, 2].PutValue(Public_BranchName);
             foreach (KeyValuePair<String, List<myStudent>> k in dica)
             {
                 cs[index, 0].PutValue(NationalDic.ContainsKey(k.Key) ? NationalDic[k.Key] : "");
@@ -342,96 +363,100 @@ namespace OverseasChineseStudent
                 cs[index, 8].PutValue(getStudentCount(k.Value, "2", "0"));
                 cs[index, 9].PutValue(getStudentCount(k.Value, "3", "1"));
                 cs[index, 10].PutValue(getStudentCount(k.Value, "3", "0"));
-                cs[index, 11].PutValue(getStudentCount(k.Value, "4", "1"));
-                cs[index, 12].PutValue(getStudentCount(k.Value, "4", "0"));
-                cs[index, 13].PutValue(getStudentCount(k.Value, "5", "1"));
-                cs[index, 14].PutValue(getStudentCount(k.Value, "5", "0"));
+                //cs[index, 11].PutValue(getStudentCount(k.Value, "4", "1"));
+                //cs[index, 12].PutValue(getStudentCount(k.Value, "4", "0"));
+                cs[index, 11].PutValue(getStudentCount(k.Value, "5", "1"));
+                cs[index, 12].PutValue(getStudentCount(k.Value, "5", "0"));
 
                 int[] count = GetNewOldStudents(k.Value);
-                cs[index, 15].PutValue(count[0]);
-                cs[index, 16].PutValue(count[1]);
+                cs[index, 13].PutValue(count[0]);
+                cs[index, 14].PutValue(count[1]);
 
-                List<GraduateStudentObj> list = getGraduateStudentList(k.Key, "普通科");
-                cs[index, 17].PutValue(list.Count);
-                cs[index, 18].PutValue(getGraduateStudentCount(list, "1"));
-                cs[index, 19].PutValue(getGraduateStudentCount(list, "0"));
+                List<GraduateStudentObj> list = getGraduateStudentList(k.Key);
+                cs[index, 15].PutValue(list.Count);
+                cs[index, 16].PutValue(getGraduateStudentCount(list, "1"));
+                cs[index, 17].PutValue(getGraduateStudentCount(list, "0"));
+                List<CompletionStudentObj> list1 = getCompletionStudentList(k.Key);
+                cs[index, 18].PutValue(list1.Count);
+                cs[index, 19].PutValue(getCompletionStudentCount(list1, "1"));
+                cs[index, 20].PutValue(getCompletionStudentCount(list1, "0"));
                 index++;
             }
 
+            //_wk.Worksheets.Add();
+            //_wk.Worksheets[1].Copy(wk2.Worksheets[0]); //複製範本文件
+            //ws = _wk.Worksheets[1];
+            //ws.Name = "綜合高中科";
+            //cs = ws.Cells;
+            //index = 9;
+            //Dictionary<String, List<myStudent>> dicb = getStudentDic(綜合高中科);
+            //foreach (KeyValuePair<String, List<myStudent>> k in dicb)
+            //{
+            //    cs[index, 0].PutValue(NationalDic.ContainsKey(k.Key) ? NationalDic[k.Key] : "");
+            //    cs[index, 1].PutValue(k.Key);
+            //    cs[index, 2].PutValue(getStudentCount(k.Value));
+            //    cs[index, 3].PutValue(getStudentCount(k.Value, "0", "1"));
+            //    cs[index, 4].PutValue(getStudentCount(k.Value, "0", "0"));
+            //    cs[index, 5].PutValue(getStudentCount(k.Value, "1", "1"));
+            //    cs[index, 6].PutValue(getStudentCount(k.Value, "1", "0"));
+            //    cs[index, 7].PutValue(getStudentCount(k.Value, "2", "1"));
+            //    cs[index, 8].PutValue(getStudentCount(k.Value, "2", "0"));
+            //    cs[index, 9].PutValue(getStudentCount(k.Value, "3", "1"));
+            //    cs[index, 10].PutValue(getStudentCount(k.Value, "3", "0"));
+            //    cs[index, 11].PutValue(getStudentCount(k.Value, "4", "1"));
+            //    cs[index, 12].PutValue(getStudentCount(k.Value, "4", "0"));
+            //    cs[index, 13].PutValue(getStudentCount(k.Value, "5", "1"));
+            //    cs[index, 14].PutValue(getStudentCount(k.Value, "5", "0"));
+
+            //    int[] count = GetNewOldStudents(k.Value);
+            //    cs[index, 15].PutValue(count[0]);
+            //    cs[index, 16].PutValue(count[1]);
+
+            //    List<GraduateStudentObj> list = getGraduateStudentList(k.Key, "綜合高中科");
+            //    cs[index, 17].PutValue(list.Count);
+            //    cs[index, 18].PutValue(getGraduateStudentCount(list, "1"));
+            //    cs[index, 19].PutValue(getGraduateStudentCount(list, "0"));
+            //    index++;
+            //}
+
+            //_wk.Worksheets.Add();
+            //_wk.Worksheets[2].Copy(wk2.Worksheets[0]); //複製範本文件
+            //ws = _wk.Worksheets[2];
+            //ws.Name = "職業科";
+            //cs = ws.Cells;
+            //index = 9;
+            //Dictionary<String, List<myStudent>> dicc = getStudentDic(職業科);
+            //foreach (KeyValuePair<String, List<myStudent>> k in dicc)
+            //{
+            //    cs[index, 0].PutValue(NationalDic.ContainsKey(k.Key) ? NationalDic[k.Key] : "");
+            //    cs[index, 1].PutValue(k.Key);
+            //    cs[index, 2].PutValue(getStudentCount(k.Value));
+            //    cs[index, 3].PutValue(getStudentCount(k.Value, "0", "1"));
+            //    cs[index, 4].PutValue(getStudentCount(k.Value, "0", "0"));
+            //    cs[index, 5].PutValue(getStudentCount(k.Value, "1", "1"));
+            //    cs[index, 6].PutValue(getStudentCount(k.Value, "1", "0"));
+            //    cs[index, 7].PutValue(getStudentCount(k.Value, "2", "1"));
+            //    cs[index, 8].PutValue(getStudentCount(k.Value, "2", "0"));
+            //    cs[index, 9].PutValue(getStudentCount(k.Value, "3", "1"));
+            //    cs[index, 10].PutValue(getStudentCount(k.Value, "3", "0"));
+            //    cs[index, 11].PutValue(getStudentCount(k.Value, "4", "1"));
+            //    cs[index, 12].PutValue(getStudentCount(k.Value, "4", "0"));
+            //    cs[index, 13].PutValue(getStudentCount(k.Value, "5", "1"));
+            //    cs[index, 14].PutValue(getStudentCount(k.Value, "5", "0"));
+
+            //    int[] count = GetNewOldStudents(k.Value);
+            //    cs[index, 15].PutValue(count[0]);
+            //    cs[index, 16].PutValue(count[1]);
+
+            //    List<GraduateStudentObj> list = getGraduateStudentList(k.Key, "職業科");
+            //    cs[index, 17].PutValue(list.Count);
+            //    cs[index, 18].PutValue(getGraduateStudentCount(list, "1"));
+            //    cs[index, 19].PutValue(getGraduateStudentCount(list, "0"));
+            //    index++;
+            //}
+
             _wk.Worksheets.Add();
-            _wk.Worksheets[1].Copy(wk2.Worksheets[0]); //複製範本文件
             ws = _wk.Worksheets[1];
-            ws.Name = "綜合高中科";
-            cs = ws.Cells;
-            index = 9;
-            Dictionary<String, List<myStudent>> dicb = getStudentDic(綜合高中科);
-            foreach (KeyValuePair<String, List<myStudent>> k in dicb)
-            {
-                cs[index, 0].PutValue(NationalDic.ContainsKey(k.Key) ? NationalDic[k.Key] : "");
-                cs[index, 1].PutValue(k.Key);
-                cs[index, 2].PutValue(getStudentCount(k.Value));
-                cs[index, 3].PutValue(getStudentCount(k.Value, "0", "1"));
-                cs[index, 4].PutValue(getStudentCount(k.Value, "0", "0"));
-                cs[index, 5].PutValue(getStudentCount(k.Value, "1", "1"));
-                cs[index, 6].PutValue(getStudentCount(k.Value, "1", "0"));
-                cs[index, 7].PutValue(getStudentCount(k.Value, "2", "1"));
-                cs[index, 8].PutValue(getStudentCount(k.Value, "2", "0"));
-                cs[index, 9].PutValue(getStudentCount(k.Value, "3", "1"));
-                cs[index, 10].PutValue(getStudentCount(k.Value, "3", "0"));
-                cs[index, 11].PutValue(getStudentCount(k.Value, "4", "1"));
-                cs[index, 12].PutValue(getStudentCount(k.Value, "4", "0"));
-                cs[index, 13].PutValue(getStudentCount(k.Value, "5", "1"));
-                cs[index, 14].PutValue(getStudentCount(k.Value, "5", "0"));
-
-                int[] count = GetNewOldStudents(k.Value);
-                cs[index, 15].PutValue(count[0]);
-                cs[index, 16].PutValue(count[1]);
-
-                List<GraduateStudentObj> list = getGraduateStudentList(k.Key, "綜合高中科");
-                cs[index, 17].PutValue(list.Count);
-                cs[index, 18].PutValue(getGraduateStudentCount(list, "1"));
-                cs[index, 19].PutValue(getGraduateStudentCount(list, "0"));
-                index++;
-            }
-
-            _wk.Worksheets.Add();
-            _wk.Worksheets[2].Copy(wk2.Worksheets[0]); //複製範本文件
-            ws = _wk.Worksheets[2];
-            ws.Name = "職業科";
-            cs = ws.Cells;
-            index = 9;
-            Dictionary<String, List<myStudent>> dicc = getStudentDic(職業科);
-            foreach (KeyValuePair<String, List<myStudent>> k in dicc)
-            {
-                cs[index, 0].PutValue(NationalDic.ContainsKey(k.Key) ? NationalDic[k.Key] : "");
-                cs[index, 1].PutValue(k.Key);
-                cs[index, 2].PutValue(getStudentCount(k.Value));
-                cs[index, 3].PutValue(getStudentCount(k.Value, "0", "1"));
-                cs[index, 4].PutValue(getStudentCount(k.Value, "0", "0"));
-                cs[index, 5].PutValue(getStudentCount(k.Value, "1", "1"));
-                cs[index, 6].PutValue(getStudentCount(k.Value, "1", "0"));
-                cs[index, 7].PutValue(getStudentCount(k.Value, "2", "1"));
-                cs[index, 8].PutValue(getStudentCount(k.Value, "2", "0"));
-                cs[index, 9].PutValue(getStudentCount(k.Value, "3", "1"));
-                cs[index, 10].PutValue(getStudentCount(k.Value, "3", "0"));
-                cs[index, 11].PutValue(getStudentCount(k.Value, "4", "1"));
-                cs[index, 12].PutValue(getStudentCount(k.Value, "4", "0"));
-                cs[index, 13].PutValue(getStudentCount(k.Value, "5", "1"));
-                cs[index, 14].PutValue(getStudentCount(k.Value, "5", "0"));
-
-                int[] count = GetNewOldStudents(k.Value);
-                cs[index, 15].PutValue(count[0]);
-                cs[index, 16].PutValue(count[1]);
-
-                List<GraduateStudentObj> list = getGraduateStudentList(k.Key, "職業科");
-                cs[index, 17].PutValue(list.Count);
-                cs[index, 18].PutValue(getGraduateStudentCount(list, "1"));
-                cs[index, 19].PutValue(getGraduateStudentCount(list, "0"));
-                index++;
-            }
-
-            _wk.Worksheets.Add();
-            ws = _wk.Worksheets[3];
             ws.Name = "異常資料表";
             cs = ws.Cells;
             cs["A1"].PutValue("學號");
@@ -462,37 +487,44 @@ namespace OverseasChineseStudent
                 cs[index, 5].PutValue(obj.Dept);
                 cs[index, 6].PutValue("畢業或離校生");
             }
-
-        }
-
-        private List<myStudent> getStudentListByDept(String dept)
-        {
-            List<myStudent> list = new List<myStudent>();
-
-            switch (dept)
+            foreach (CompletionStudentObj obj in _CErrorList)
             {
-                case "職業科":
-                    foreach (myStudent s in _CleanList)
-                    {
-                        if (!s.Dept_name.Contains("普通科") && !s.Dept_name.Contains("綜合高中科"))
-                        {
-                            list.Add(s);
-                        }
-                    }
-                    break;
-
-                default:
-                    foreach (myStudent s in _CleanList)
-                    {
-                        if (s.Dept_name.Contains(dept))
-                        {
-                            list.Add(s);
-                        }
-                    }
-                    break;
+                cs[index, 0].PutValue(obj.Student_number);
+                cs[index, 1].PutValue(obj.Name);
+                cs[index, 2].PutValue(obj.Gender);
+                cs[index, 5].PutValue(obj.Dept);
+                cs[index, 6].PutValue("未達畢業標準");
             }
-            return list;
         }
+
+        //private List<myStudent> getStudentListByDept(String dept)
+        //{
+        //    List<myStudent> list = new List<myStudent>();
+
+        //    switch (dept)
+        //    {
+        //        case "職業科":
+        //            foreach (myStudent s in _CleanList)
+        //            {
+        //                if (!s.Dept_name.Contains("普通科") && !s.Dept_name.Contains("綜合高中科"))
+        //                {
+        //                    list.Add(s);
+        //                }
+        //            }
+        //            break;
+
+        //        default:
+        //            foreach (myStudent s in _CleanList)
+        //            {
+        //                if (s.Dept_name.Contains(dept))
+        //                {
+        //                    list.Add(s);
+        //                }
+        //            }
+        //            break;
+        //    }
+        //    return list;
+        //}
 
         private Dictionary<String, List<myStudent>> getStudentDic(List<myStudent> list)
         {
@@ -589,7 +621,8 @@ namespace OverseasChineseStudent
             int year = Convert.ToInt32(_SchoolYear) - 1; //當前系統學年度-1
             Dictionary<String, GraduateStudentObj> dic = new Dictionary<string, GraduateStudentObj>();
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
-            DataTable dt = _Q.Select("select update_record.ref_student_id,update_record.ss_name,student.student_number,update_record.ss_gender,update_record.ss_dept,tag_student.ref_tag_id from update_record left join tag_student on update_record.ref_student_id = tag_student.ref_student_id left join student on update_record.ref_student_id=student.id where update_code='501' and school_year='"+ year +"'");
+            string sql = "select update_record.ref_student_id,update_record.ss_name,student.student_number,update_record.ss_gender,update_record.ss_dept,tag_student.ref_tag_id from update_record left join tag_student on update_record.ref_student_id = tag_student.ref_student_id left join student on update_record.ref_student_id=student.id left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id where update_code='501' and school_year=" + year + " AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")";
+            DataTable dt = _Q.Select(sql);
 
             foreach (DataRow row in dt.Rows)
             {
@@ -623,65 +656,32 @@ namespace OverseasChineseStudent
         }
 
         //取得指定的上屆畢業生清單
-        private List<GraduateStudentObj> getGraduateStudentList(String group_name,String dept)
+        private List<GraduateStudentObj> getGraduateStudentList(String group_name)
         {
             List<GraduateStudentObj> list = new List<GraduateStudentObj>();
-            
-            switch(dept)
+            foreach (KeyValuePair<String, List<String>> map in _mappingData)
             {
-                case "職業科":
-                    foreach (KeyValuePair<String, List<String>> map in _mappingData)
+                if (map.Key == group_name) //搜尋指定的tagID
+                {
+                    foreach (String map_id in map.Value)
                     {
-                        if (map.Key == group_name) //搜尋指定的tagID
+                        foreach (GraduateStudentObj obj in _GraduateStudentList)
                         {
-                            foreach (String map_id in map.Value)
-                            {
-                                foreach (GraduateStudentObj obj in _GraduateStudentList)
-                                {
-                                    if (!obj.Dept.Contains("普通科") && !obj.Dept.Contains("綜合高中科")) //從畢業生總清單搜尋指定的科別
-                                    {
-                                        foreach (String s in obj.TagID)
-                                        {
-                                            if (s == map_id) //判斷該學生的tagID是否符合
-                                            {
-                                                list.Add(obj);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    break;
 
-                default:
-                    foreach (KeyValuePair<String, List<String>> map in _mappingData)
-                    {
-                        if (map.Key == group_name) //搜尋指定的tagID
-                        {
-                            foreach (String map_id in map.Value)
+                            foreach (String s in obj.TagID)
                             {
-                                foreach (GraduateStudentObj obj in _GraduateStudentList)
+                                if (s == map_id) //判斷該學生的tagID是否符合
                                 {
-                                    if (obj.Dept.Contains(dept)) //從畢業生總清單搜尋指定的科別
-                                    {
-                                        foreach (String s in obj.TagID) 
-                                        {
-                                            if (s == map_id) //判斷該學生的tagID是否符合
-                                            {
-                                                list.Add(obj);
-                                                break;
-                                            }
-                                        }
-                                    }
+                                    list.Add(obj);
+                                    break;
                                 }
                             }
+
                         }
                     }
-                    break;
+                }
+
             }
-            
             return list;
         }
 
@@ -698,7 +698,96 @@ namespace OverseasChineseStudent
             }
             return count;
         }
+        //取得上學年未達畢業標準物件清單
+        private List<CompletionStudentObj> getCompletionStudent()
+        {
+            _CCleanList = new List<CompletionStudentObj>();
+            _CErrorList = new List<CompletionStudentObj>();
+            int year = Convert.ToInt32(_SchoolYear) - 1; //當前系統學年度-1
+            Dictionary<String, CompletionStudentObj> dic = new Dictionary<string, CompletionStudentObj>();
+            FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
+            string sql = "select update_record.ref_student_id,update_record.ss_name,student.student_number,update_record.ss_gender,update_record.ss_dept,tag_student.ref_tag_id from update_record left join tag_student on update_record.ref_student_id = tag_student.ref_student_id left join student on update_record.ref_student_id=student.id left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id";
+            if (chkUnGraduate)
+                sql = sql + " where update_code in ('366','364')";
+            else
+                sql = sql + " where update_code in ('366')";
+            sql = sql + " and school_year=" + year + " AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")";
+            
+            DataTable dt = _Q.Select(sql);
 
+            foreach (DataRow row in dt.Rows)
+            {
+                String id = row["ref_student_id"].ToString();
+                String name = row["ss_name"].ToString();
+                String student_number = row["student_number"].ToString();
+                String gender = row["ss_gender"].ToString();
+                String dept = row["ss_dept"].ToString();
+                String tagid = row["ref_tag_id"].ToString();
+                if (!dic.ContainsKey(id))
+                {
+                    dic.Add(id, new CompletionStudentObj(id, name, student_number, gender, dept, new List<String>()));
+                }
+                dic[id].TagID.Add(tagid);
+            }
+
+            //判斷性別欄位是否異常
+            foreach (String id in dic.Keys)
+            {
+                if (dic[id].Gender != "1" && dic[id].Gender != "0")
+                {
+                    _CErrorList.Add(dic[id]);
+                }
+                else
+                {
+                    _CCleanList.Add(dic[id]);
+                }
+            }
+
+            return _CCleanList;
+        }
+
+        //取得指定的上屆未達畢業標準畢業生清單
+        private List<CompletionStudentObj> getCompletionStudentList(String group_name)
+        {
+            List<CompletionStudentObj> list = new List<CompletionStudentObj>();
+
+            foreach (KeyValuePair<String, List<String>> map in _mappingData)
+            {
+                if (map.Key == group_name) //搜尋指定的tagID
+                {
+                    foreach (String map_id in map.Value)
+                    {
+                        foreach (CompletionStudentObj obj in _CompletionStudentList)
+                        {                                   
+                            foreach (String s in obj.TagID)
+                            {
+                                if (s == map_id) //判斷該學生的tagID是否符合
+                                {
+                                    list.Add(obj);
+                                    break;
+                                }
+                            }
+                                   
+                        }
+                    }
+                }
+            }
+            return list;
+        }
+
+        //取得清單中指定性別的未達畢業標準總數
+        private int getCompletionStudentCount(List<CompletionStudentObj> list, String gender)
+        {
+            int count = 0;
+            foreach (CompletionStudentObj obj in list)
+            {
+                if (obj.Gender == gender)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
         private void buttonX3_Click(object sender, EventArgs e)
         {
             this.Close();

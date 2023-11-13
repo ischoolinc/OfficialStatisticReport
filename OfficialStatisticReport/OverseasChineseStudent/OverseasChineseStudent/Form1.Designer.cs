@@ -124,7 +124,7 @@
             this.Controls.Add(this.dataGridViewX1);
             this.DoubleBuffered = true;
             this.Name = "Form1";
-            this.Text = "僑生統計";
+            this.Text = "高級中等學校僑生及大陸和港澳地區學生統計";
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewX1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

@@ -42,11 +42,16 @@ namespace UpdateRecordReport
         Workbook _WK;
 
         //各科別清單
-        List<RecordObj> 普通科, 綜合高中科, 職業科;
-
-        public Form1()
+        //List<RecordObj> 普通科, 綜合高中科, 職業科;
+        string Public_BranchID;
+        string Public_BranchName;
+        
+        public Form1(string BranchID, string BranchName)
         {
             InitializeComponent();
+            Public_BranchID = BranchID;
+            Public_BranchName = BranchName;
+            
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -121,7 +126,7 @@ namespace UpdateRecordReport
 
             _DefaultItem.Add("復學生", new List<string>(new string[] { "221", "222", "223", "224", "225", "226", "237", "238", "239", "240", }));
 
-            _DefaultItem.Add("轉入:他校轉入", new List<string>(new string[] { "111", "112", "113", "114", "115", "121", "122", "123", "124","131","141","142","143","144" }));
+            _DefaultItem.Add("轉入:他校轉入", new List<string>(new string[] { "111", "112", "113", "114", "115", "121", "122", "123", "124", }));
             _DefaultItem.Add("轉入:本校不同學制轉入",new List<string>());
 
             _DefaultItem.Add("死亡", new List<string>(new string[] { "361" }));
@@ -191,8 +196,8 @@ namespace UpdateRecordReport
 
             SaveFileDialog sd = new System.Windows.Forms.SaveFileDialog();
             sd.Title = "另存新檔";
-            sd.FileName = "高中職學校學生異動報告.xls";
-            sd.Filter = "Excel檔案 (*.xls)|*.xls|所有檔案 (*.*)|*.*";
+            sd.FileName = "高中職學校學生異動報告.xlsx";
+            sd.Filter = "Excel檔案 (*.xlsx)|*.xlsx|所有檔案 (*.*)|*.*";
             if (sd.ShowDialog() == DialogResult.OK)
             {
                 try
@@ -203,6 +208,7 @@ namespace UpdateRecordReport
                         MessageBox.Show("發現" + _ErrorList.Count + "筆異常資料未列入統計\r\n詳細資料請確認報表中的[異常資料表]");
                     }
                     System.Diagnostics.Process.Start(sd.FileName);
+                    this.Close();
                 }
                 catch
                 {
@@ -232,8 +238,8 @@ namespace UpdateRecordReport
             //SQL查詢資料
             QueryHelper _Q = new QueryHelper();
             StringBuilder sb = new StringBuilder();
-            sb.Append("select id,ref_student_id,ss_name,ss_student_number,ss_gender,ss_grade_year,ss_dept,update_code from update_record ");
-            sb.Append(string.Format("where school_year='{0}' and semester='{1}' and update_code in ({2})", _SchoolYear, _Semester, updateCode));
+            sb.Append("select update_record.id,ref_student_id,ss_name,ss_student_number,ss_gender,ss_grade_year,ss_dept,update_code,student.status from update_record left join student on ref_student_id = student.id left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id ");
+            sb.Append(string.Format("where school_year={0} and semester={1} and update_code in ({2}) and dept.ref_dept_group_id in ({3}) ", _SchoolYear, _Semester, updateCode,  Public_BranchID.Substring(0,Public_BranchID.Length-1)));
 
             DataTable dt = _Q.Select(sb.ToString());
 
@@ -247,7 +253,7 @@ namespace UpdateRecordReport
                 string uid = row["id"].ToString();
                 string sid = row["ref_student_id"].ToString();
                 string code = row["update_code"].ToString();
-
+                
                 //有501代碼且不存在於passList者,sid加入清單
                 if (code == "501" && !graduateList.Contains(sid))
                 {
@@ -257,6 +263,7 @@ namespace UpdateRecordReport
                 //有235或236代碼且不存在於delayList者,sid加入清單
                 if ((code == "235" || code == "236" || code == "243" || code == "244") && !delayList.Contains(sid))
                 {
+                   
                     delayList.Add(sid);
                 }
 
@@ -308,7 +315,8 @@ namespace UpdateRecordReport
                 if (k.Value.Grade == "-1")
                     k.Value.Delay = true;
 
-
+                if (k.Value.Status == "2")
+                    k.Value.Grade = "-1";
                 //性別為男或女且有正確(1~4)年級者才處理,否則加入錯誤清單 //2022/8/26 將 "-1" 延修生也列為正確
                 if ((k.Value.Gender == "1" || k.Value.Gender == "0") && (k.Value.Grade == "1" || k.Value.Grade == "2" || k.Value.Grade == "3" || k.Value.Grade == "4" || k.Value.Grade == "-1"))
                 {
@@ -320,9 +328,9 @@ namespace UpdateRecordReport
                 }
             }
 
-            普通科 = getStudentListByDept("普通科");
-            綜合高中科 = getStudentListByDept("綜合高中科");
-            職業科 = getStudentListByDept("職業科");
+            //普通科 = getStudentListByDept("普通科");
+            //綜合高中科 = getStudentListByDept("綜合高中科");
+            //職業科 = getStudentListByDept("職業科");
 
             Export();
         }
@@ -334,92 +342,96 @@ namespace UpdateRecordReport
             wk2.Open(new MemoryStream(Properties.Resources.Template)); //開啟範本文件
             _WK.Worksheets[0].Copy(wk2.Worksheets[0]); //複製範本文件
             Worksheet ws = _WK.Worksheets[0];
-            ws.Name = "普通科";
+            ws.Name = Public_BranchName;
             Cells cs = ws.Cells;
             int index = 8;
             //需要跳下一行的行數
             //List<int> nextRow = new List<int>(new int[] { 13, 18, 27 });
             List<int> nextRow = new List<int>(new int[] { 12, 16, 25 });
 
-            Dictionary<string, List<RecordObj>> dica = getSortDic(普通科);
+            Dictionary<string, List<RecordObj>> dica = getSortDic(_CleanList);
             cs[3, 5].PutValue(_SchoolYear + " 學年第 " + _Semester + "     學期");
+            cs[0, 10].PutValue(K12.Data.School.ChineseName + "(教務處)");
+            cs[4, 0].PutValue(K12.Data.School.Code);
+            cs[4, 1].PutValue(Public_BranchName);
+            cs[2, 0].PutValue("表 - 16 高級中等學校學生異動概況─"+Public_BranchName);
             foreach (KeyValuePair<string, List<RecordObj>> k in dica)
             {
-                cs[index, 1].PutValue(k.Value.Count);
-                cs[index, 2].PutValue(getStudentCount(k.Value, "0", "1"));
-                cs[index, 3].PutValue(getStudentCount(k.Value, "0", "0"));
-                cs[index, 4].PutValue(getStudentCount(k.Value, "1", "1"));
-                cs[index, 5].PutValue(getStudentCount(k.Value, "1", "0"));
-                cs[index, 6].PutValue(getStudentCount(k.Value, "2", "1"));
-                cs[index, 7].PutValue(getStudentCount(k.Value, "2", "0"));
-                cs[index, 8].PutValue(getStudentCount(k.Value, "3", "1"));
-                cs[index, 9].PutValue(getStudentCount(k.Value, "3", "0"));
-                cs[index, 10].PutValue(getStudentCount(k.Value, "4", "1"));
-                cs[index, 11].PutValue(getStudentCount(k.Value, "4", "0"));
-                cs[index, 12].PutValue(getDelayCount(k.Value, "1"));
-                cs[index, 13].PutValue(getDelayCount(k.Value, "0"));
+                cs[index, 2].PutValue(k.Value.Count);
+                cs[index, 3].PutValue(getStudentCount(k.Value, "0", "1"));
+                cs[index, 4].PutValue(getStudentCount(k.Value, "0", "0"));
+                cs[index, 5].PutValue(getStudentCount(k.Value, "1", "1"));
+                cs[index, 6].PutValue(getStudentCount(k.Value, "1", "0"));
+                cs[index, 7].PutValue(getStudentCount(k.Value, "2", "1"));
+                cs[index, 8].PutValue(getStudentCount(k.Value, "2", "0"));
+                cs[index, 9].PutValue(getStudentCount(k.Value, "3", "1"));
+                cs[index, 10].PutValue(getStudentCount(k.Value, "3", "0"));
+                //cs[index, 11].PutValue(getStudentCount(k.Value, "4", "1"));
+                //cs[index, 12].PutValue(getStudentCount(k.Value, "4", "0"));
+                cs[index, 11].PutValue(getDelayCount(k.Value, "1"));
+                cs[index, 12].PutValue(getDelayCount(k.Value, "0"));
                 index++;
                 if (nextRow.Contains(index)) index++;
             }
 
+            //_WK.Worksheets.Add();
+            //_WK.Worksheets[1].Copy(wk2.Worksheets[0]); //複製範本文件
+            //ws = _WK.Worksheets[1];
+            //ws.Name = "綜合高中科";
+            //cs = ws.Cells;
+            //index = 8;
+
+            //Dictionary<string, List<RecordObj>> dicb = getSortDic(綜合高中科);
+            //cs[3, 5].PutValue(_SchoolYear + " 學年第 " + _Semester + "     學期");
+            //foreach (KeyValuePair<string, List<RecordObj>> k in dicb)
+            //{
+            //    cs[index, 1].PutValue(k.Value.Count);
+            //    cs[index, 2].PutValue(getStudentCount(k.Value, "0", "1"));
+            //    cs[index, 3].PutValue(getStudentCount(k.Value, "0", "0"));
+            //    cs[index, 4].PutValue(getStudentCount(k.Value, "1", "1"));
+            //    cs[index, 5].PutValue(getStudentCount(k.Value, "1", "0"));
+            //    cs[index, 6].PutValue(getStudentCount(k.Value, "2", "1"));
+            //    cs[index, 7].PutValue(getStudentCount(k.Value, "2", "0"));
+            //    cs[index, 8].PutValue(getStudentCount(k.Value, "3", "1"));
+            //    cs[index, 9].PutValue(getStudentCount(k.Value, "3", "0"));
+            //    cs[index, 10].PutValue(getStudentCount(k.Value, "4", "1"));
+            //    cs[index, 11].PutValue(getStudentCount(k.Value, "4", "0"));
+            //    cs[index, 12].PutValue(getDelayCount(k.Value, "1"));
+            //    cs[index, 13].PutValue(getDelayCount(k.Value, "0"));
+            //    index++;
+            //    if (nextRow.Contains(index)) index++;
+            //}
+
+            //_WK.Worksheets.Add();
+            //_WK.Worksheets[2].Copy(wk2.Worksheets[0]); //複製範本文件
+            //ws = _WK.Worksheets[2];
+            //ws.Name = "職業科";
+            //cs = ws.Cells;
+            //index = 8;
+
+            //Dictionary<string, List<RecordObj>> dicc = getSortDic(職業科);
+            //cs[3, 5].PutValue(_SchoolYear + " 學年第 " + _Semester + "     學期");
+            //foreach (KeyValuePair<string, List<RecordObj>> k in dicc)
+            //{
+            //    cs[index, 1].PutValue(k.Value.Count);
+            //    cs[index, 2].PutValue(getStudentCount(k.Value, "0", "1"));
+            //    cs[index, 3].PutValue(getStudentCount(k.Value, "0", "0"));
+            //    cs[index, 4].PutValue(getStudentCount(k.Value, "1", "1"));
+            //    cs[index, 5].PutValue(getStudentCount(k.Value, "1", "0"));
+            //    cs[index, 6].PutValue(getStudentCount(k.Value, "2", "1"));
+            //    cs[index, 7].PutValue(getStudentCount(k.Value, "2", "0"));
+            //    cs[index, 8].PutValue(getStudentCount(k.Value, "3", "1"));
+            //    cs[index, 9].PutValue(getStudentCount(k.Value, "3", "0"));
+            //    cs[index, 10].PutValue(getStudentCount(k.Value, "4", "1"));
+            //    cs[index, 11].PutValue(getStudentCount(k.Value, "4", "0"));
+            //    cs[index, 12].PutValue(getDelayCount(k.Value, "1"));
+            //    cs[index, 13].PutValue(getDelayCount(k.Value, "0"));
+            //    index++;
+            //    if (nextRow.Contains(index)) index++;
+            //}
+
             _WK.Worksheets.Add();
-            _WK.Worksheets[1].Copy(wk2.Worksheets[0]); //複製範本文件
             ws = _WK.Worksheets[1];
-            ws.Name = "綜合高中科";
-            cs = ws.Cells;
-            index = 8;
-
-            Dictionary<string, List<RecordObj>> dicb = getSortDic(綜合高中科);
-            cs[3, 5].PutValue(_SchoolYear + " 學年第 " + _Semester + "     學期");
-            foreach (KeyValuePair<string, List<RecordObj>> k in dicb)
-            {
-                cs[index, 1].PutValue(k.Value.Count);
-                cs[index, 2].PutValue(getStudentCount(k.Value, "0", "1"));
-                cs[index, 3].PutValue(getStudentCount(k.Value, "0", "0"));
-                cs[index, 4].PutValue(getStudentCount(k.Value, "1", "1"));
-                cs[index, 5].PutValue(getStudentCount(k.Value, "1", "0"));
-                cs[index, 6].PutValue(getStudentCount(k.Value, "2", "1"));
-                cs[index, 7].PutValue(getStudentCount(k.Value, "2", "0"));
-                cs[index, 8].PutValue(getStudentCount(k.Value, "3", "1"));
-                cs[index, 9].PutValue(getStudentCount(k.Value, "3", "0"));
-                cs[index, 10].PutValue(getStudentCount(k.Value, "4", "1"));
-                cs[index, 11].PutValue(getStudentCount(k.Value, "4", "0"));
-                cs[index, 12].PutValue(getDelayCount(k.Value, "1"));
-                cs[index, 13].PutValue(getDelayCount(k.Value, "0"));
-                index++;
-                if (nextRow.Contains(index)) index++;
-            }
-
-            _WK.Worksheets.Add();
-            _WK.Worksheets[2].Copy(wk2.Worksheets[0]); //複製範本文件
-            ws = _WK.Worksheets[2];
-            ws.Name = "職業科";
-            cs = ws.Cells;
-            index = 8;
-
-            Dictionary<string, List<RecordObj>> dicc = getSortDic(職業科);
-            cs[3, 5].PutValue(_SchoolYear + " 學年第 " + _Semester + "     學期");
-            foreach (KeyValuePair<string, List<RecordObj>> k in dicc)
-            {
-                cs[index, 1].PutValue(k.Value.Count);
-                cs[index, 2].PutValue(getStudentCount(k.Value, "0", "1"));
-                cs[index, 3].PutValue(getStudentCount(k.Value, "0", "0"));
-                cs[index, 4].PutValue(getStudentCount(k.Value, "1", "1"));
-                cs[index, 5].PutValue(getStudentCount(k.Value, "1", "0"));
-                cs[index, 6].PutValue(getStudentCount(k.Value, "2", "1"));
-                cs[index, 7].PutValue(getStudentCount(k.Value, "2", "0"));
-                cs[index, 8].PutValue(getStudentCount(k.Value, "3", "1"));
-                cs[index, 9].PutValue(getStudentCount(k.Value, "3", "0"));
-                cs[index, 10].PutValue(getStudentCount(k.Value, "4", "1"));
-                cs[index, 11].PutValue(getStudentCount(k.Value, "4", "0"));
-                cs[index, 12].PutValue(getDelayCount(k.Value, "1"));
-                cs[index, 13].PutValue(getDelayCount(k.Value, "0"));
-                index++;
-                if (nextRow.Contains(index)) index++;
-            }
-
-            _WK.Worksheets.Add();
-            ws = _WK.Worksheets[3];
             ws.Name = "異常資料表";
             cs = ws.Cells;
             cs["A1"].PutValue("學號");
@@ -442,34 +454,34 @@ namespace UpdateRecordReport
             }
         }
 
-        private List<RecordObj> getStudentListByDept(String dept)
-        {
-            List<RecordObj> list = new List<RecordObj>();
+        //private List<RecordObj> getStudentListByDept(String dept)
+        //{
+        //    List<RecordObj> list = new List<RecordObj>();
 
-            switch (dept)
-            {
-                case "職業科":
-                    foreach (RecordObj obj in _CleanList)
-                    {
-                        if (!obj.Dept.Contains("普通科") && !obj.Dept.Contains("綜合高中科"))
-                        {
-                            list.Add(obj);
-                        }
-                    }
-                    break;
+        //    switch (dept)
+        //    {
+        //        case "職業科":
+        //            foreach (RecordObj obj in _CleanList)
+        //            {
+        //                if (!obj.Dept.Contains("普通科") && !obj.Dept.Contains("綜合高中科"))
+        //                {
+        //                    list.Add(obj);
+        //                }
+        //            }
+        //            break;
 
-                default:
-                    foreach (RecordObj obj in _CleanList)
-                    {
-                        if (obj.Dept.Contains(dept))
-                        {
-                            list.Add(obj);
-                        }
-                    }
-                    break;
-            }
-            return list;
-        }
+        //        default:
+        //            foreach (RecordObj obj in _CleanList)
+        //            {
+        //                if (obj.Dept.Contains(dept))
+        //                {
+        //                    list.Add(obj);
+        //                }
+        //            }
+        //            break;
+        //    }
+        //    return list;
+        //}
 
         //將學生清單分類成_MappingData的各項目
         private Dictionary<string, List<RecordObj>> getSortDic(List<RecordObj> list)

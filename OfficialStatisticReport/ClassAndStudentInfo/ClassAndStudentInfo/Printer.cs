@@ -20,14 +20,21 @@ namespace ClassAndStudentInfo
         String _SchoolYear; //當前學年度
         private List<StudentObj> _ErrorList, _CorrectList;
         private List<GraduateStudentObj> _GraduateStudentList;
+        private List<CompletionStudentObj> _CompletionStudentList;
         private List<ReStudentObj> _ReStudentList;
-        private Dictionary<String, List<StudentObj>> DeptDic, 普通科, 綜合高中科, 職業科;
+        private Dictionary<String, List<StudentObj>> DeptDic;
         Dictionary<String, String> Dept_ref; //科別代碼對照,key=code,value=name;
         private BackgroundWorker _BGWClassStudentAbsenceDetail; //背景模式
         Workbook _Wk;
-
-        public void Start()
+        string  Public_BranchID;
+        string Public_BranchName;
+        Boolean HasData;
+        Boolean chkUnGraduate;
+        public void Start(string BranchID,string BranchName,Boolean UnGraduate)
         {
+            Public_BranchID = BranchID;
+            Public_BranchName = BranchName;
+            chkUnGraduate = UnGraduate;
             FISCA.Presentation.MotherForm.SetStatusBarMessage("正在產生班級及學生概況統計表...");
             _BGWClassStudentAbsenceDetail = new BackgroundWorker();
             _BGWClassStudentAbsenceDetail.DoWork += new DoWorkEventHandler(_BGWClassStudentAbsenceDetail_DoWork);
@@ -37,29 +44,35 @@ namespace ClassAndStudentInfo
 
         private void _BGWClassStudentAbsenceDetail_Completed(object sender, RunWorkerCompletedEventArgs e)
         {
-            FISCA.Presentation.MotherForm.SetStatusBarMessage("產生 班級及學生概況統計表 已完成");
-            SaveFileDialog sd = new System.Windows.Forms.SaveFileDialog();
-            sd.Title = "另存新檔";
-            sd.FileName = "班級及學生概況統計表.xls";
-            sd.Filter = "Excel檔案 (*.xls)|*.xls|所有檔案 (*.*)|*.*";
-            if (sd.ShowDialog() == DialogResult.OK)
+            if (HasData)
             {
-                try
+                FISCA.Presentation.MotherForm.SetStatusBarMessage("產生 班級及學生概況統計表 已完成");
+                SaveFileDialog sd = new System.Windows.Forms.SaveFileDialog();
+                sd.Title = "另存新檔";
+                sd.FileName = "班級及學生概況統計表.xlsx";
+                sd.Filter = "Excel檔案 (*.xlsx)|*.xls|所有檔案 (*.*)|*.*";
+                if (sd.ShowDialog() == DialogResult.OK)
                 {
-                    _Wk.Save(sd.FileName);
-                    if (_ErrorList.Count > 0)
+                    try
                     {
-                        MessageBox.Show("發現" + _ErrorList.Count + "筆異常資料未列入統計\r\n詳細資料請確認報表中的[異常資料表]");
-                    }
-                    System.Diagnostics.Process.Start(sd.FileName);
+                        _Wk.Save(sd.FileName);
+                        if (_ErrorList.Count > 0)
+                        {
+                            MessageBox.Show("發現" + _ErrorList.Count + "筆異常資料未列入統計\r\n詳細資料請確認報表中的[異常資料表]");
+                        }
+                        System.Diagnostics.Process.Start(sd.FileName);
 
-                }
-                catch
-                {
-                    FISCA.Presentation.Controls.MsgBox.Show("指定路徑無法存取。", "建立檔案失敗", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
-                    return;
+                    }
+                    catch
+                    {
+                        FISCA.Presentation.Controls.MsgBox.Show("指定路徑無法存取。", "建立檔案失敗", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                        return;
+                    }
                 }
             }
+            else
+                FISCA.Presentation.MotherForm.SetStatusBarMessage("產生 班級及學生概況統計表 已完成");
+
         }
 
 
@@ -67,6 +80,7 @@ namespace ClassAndStudentInfo
         {
             _SchoolYear = K12.Data.School.DefaultSchoolYear;
             _GraduateStudentList = getGraduateStudent();
+            _CompletionStudentList = getCompletionStudent();
             _ReStudentList = getReStudent();
             QueryDeptCode(); //建立科別代號表
 
@@ -81,28 +95,39 @@ FROM
 )
 SELECT 
 	student_data.*
-	, dept.name AS dept_name
+	, dept.name AS dept_name 
 FROM 
 	student_data
 JOIN 
-	dept ON student_data._dept=dept.id";
+	dept ON student_data._dept=dept.id  AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0,Public_BranchID.Length-1)+ ")";
+                
             DataTable dt = _Q.Select(sql);
             List <StudentObj> StudentList = new List<StudentObj>();
-            foreach (DataRow row in dt.Rows)
+            if (dt.Rows.Count > 0)
             {
-                StudentObj obj = new StudentObj(row);
-                StudentList.Add(obj);
+                foreach (DataRow row in dt.Rows)
+                {
+                    StudentObj obj = new StudentObj(row);
+                    StudentList.Add(obj);
+                }
+
+                //資料整理
+                CleanList(StudentList);
+                DeptDic = SortToDept(_CorrectList); //科別分類
+                                                    //普通科 = getDicByDept(DeptDic, "普通科");
+                                                    //綜合高中科 = getDicByDept(DeptDic, "綜合高中科");
+                                                    //職業科 = getDicByDept(DeptDic, "職業科");
+
+                //資料列印           
+                Export();
+                HasData = true;
             }
+            else
+            {
+                MessageBox.Show("該部門沒有科別");
+                HasData = false;
 
-            //資料整理
-            CleanList(StudentList);
-            DeptDic = SortToDept(_CorrectList); //科別分類
-            普通科 = getDicByDept(DeptDic, "普通科");
-            綜合高中科 = getDicByDept(DeptDic, "綜合高中科");
-            職業科 = getDicByDept(DeptDic, "職業科");
-
-            //資料列印           
-            Export();
+            }
         }
 
         //科別分類,key=科別名稱,value=學生物件清單
@@ -125,13 +150,10 @@ JOIN
         private void Export()
         {
             _Wk = new Workbook();
-            _Wk.Worksheets.Add();
-            _Wk.Worksheets.Add();
-            _Wk.Worksheets.Add();
+            _Wk.Worksheets.Add();                   
             _Wk.Worksheets[0].Copy(Template()); //複製範本
-            _Wk.Worksheets[1].Copy(Template()); //複製範本
-            _Wk.Worksheets[2].Copy(Template()); //複製範本
-            Worksheet ws = _Wk.Worksheets[3];
+           
+            Worksheet ws = _Wk.Worksheets[1];
             Cells cs;
 
             ws.Name = "異常資料表";
@@ -156,38 +178,42 @@ JOIN
                 index++;
             }
 
-            //普通科
+            //指定部別
             ws = _Wk.Worksheets[0];
-            ws.Name = "普通科";
+            ws.Name = Public_BranchName;
             cs = ws.Cells;
             index = 9;
-            foreach (KeyValuePair<String, List<StudentObj>> k in 普通科)
+            cs[2,0].PutValue("表-7 高中職學校班級及學生概況（一）－" + Public_BranchName);
+            cs[3, 12].PutValue(_SchoolYear);
+            cs[4, 0].PutValue(K12.Data.School.Code);
+            cs[4, 2].PutValue(Public_BranchName);
+            cs[0, 29].PutValue(K12.Data.School.ChineseName+"(教務處)");
+            foreach (KeyValuePair<String, List<StudentObj>> k in DeptDic)
             {
                 cs[index, 1].PutValue(getDeptCode(k.Key)); //科別代碼
                 cs[index, 2].PutValue(k.Key); //科別名稱
                 cs[index, 4].PutValue(getClassCount(k.Value)); //班級數
                 cs[index, 5].PutValue(getClassCount(k.Value, "1")); //一年級班級數
                 cs[index, 6].PutValue(getClassCount(k.Value, "2")); //二年級班級數
-                cs[index, 7].PutValue(getClassCount(k.Value, "3")); //三年級班級數
-                cs[index, 8].PutValue(getClassCount(k.Value, "4")); //四年級班級數
+                cs[index, 7].PutValue(getClassCount(k.Value, "3")); //三年級班級數 
+                cs[index, 8].PutValue(getStudentCount(k.Value)); //總學生數
+                cs[index, 9].PutValue(getStudentCount(k.Value, "1")); //總男學生數
+                cs[index, 10].PutValue(getStudentCount(k.Value, "0")); //總女學生數
+                cs[index, 11].PutValue(getStudentCount(k.Value, "1", "1")); //一年級男學生數
+                cs[index, 12].PutValue(getStudentCount(k.Value, "1", "0")); //一年級女學生數
+                cs[index, 13].PutValue(getStudentCount(k.Value, "2", "1")); //二年級男學生數
+                cs[index, 14].PutValue(getStudentCount(k.Value, "2", "0")); //二年級女學生數
+                cs[index, 15].PutValue(getStudentCount(k.Value, "3", "1")); //三年級男學生數
+                cs[index, 16].PutValue(getStudentCount(k.Value, "3", "0")); //三年級女學生數 
+                cs[index, 17].PutValue(getStudentCount(k.Value, "5", "1")); //延修男學生數
+                cs[index, 18].PutValue(getStudentCount(k.Value, "5", "0")); //延修女學生數
 
-                cs[index, 9].PutValue(getStudentCount(k.Value)); //總學生數
-                cs[index, 10].PutValue(getStudentCount(k.Value, "1")); //總男學生數
-                cs[index, 11].PutValue(getStudentCount(k.Value, "0")); //總女學生數
-                cs[index, 12].PutValue(getStudentCount(k.Value, "1", "1")); //一年級男學生數
-                cs[index, 13].PutValue(getStudentCount(k.Value, "1", "0")); //一年級女學生數
-                cs[index, 14].PutValue(getStudentCount(k.Value, "2", "1")); //二年級男學生數
-                cs[index, 15].PutValue(getStudentCount(k.Value, "2", "0")); //二年級女學生數
-                cs[index, 16].PutValue(getStudentCount(k.Value, "3", "1")); //三年級男學生數
-                cs[index, 17].PutValue(getStudentCount(k.Value, "3", "0")); //三年級女學生數
-                cs[index, 18].PutValue(getStudentCount(k.Value, "4", "1")); //四年級男學生數
-                cs[index, 19].PutValue(getStudentCount(k.Value, "4", "0")); //四年級女學生數
-                cs[index, 20].PutValue(getStudentCount(k.Value, "5", "1")); //延修男學生數
-                cs[index, 21].PutValue(getStudentCount(k.Value, "5", "0")); //延修女學生數
-
-                cs[index, 22].PutValue(getGraduateStudentCount(k.Key));  //上學年畢業生總數
-                cs[index, 23].PutValue(getGraduateStudentCount(k.Key, "1")); //上學年男畢業生總數
-                cs[index, 24].PutValue(getGraduateStudentCount(k.Key, "0")); //上學年女畢業生總數
+                cs[index, 19].PutValue(getGraduateStudentCount(k.Key));  //上學年畢業生總數
+                cs[index, 20].PutValue(getGraduateStudentCount(k.Key, "1")); //上學年男畢業生總數
+                cs[index, 21].PutValue(getGraduateStudentCount(k.Key, "0")); //上學年女畢業生總數
+                cs[index, 22].PutValue(getCompletionStudentCount(k.Key));  //上學年修業生總數
+                cs[index, 23].PutValue(getCompletionStudentCount(k.Key, "1")); //上學年男修業生總數
+                cs[index, 24].PutValue(getCompletionStudentCount(k.Key, "0")); //上學年女修業生總數
 
                 cs[index, 25].PutValue(getReStudentCount(k.Key));  //當學年重讀生總數
                 cs[index, 26].PutValue(getReStudentCount(k.Key, "1"));  //當學年重讀男生總數
@@ -198,98 +224,9 @@ JOIN
                 cs[index, 31].PutValue(getReStudentCount(k.Key, "2", "0")); //當學年重讀二年級女生總數
                 cs[index, 32].PutValue(getReStudentCount(k.Key, "3", "1")); //當學年重讀三年級男生總數
                 cs[index, 33].PutValue(getReStudentCount(k.Key, "3", "0")); //當學年重讀三年級女生總數
-                index++;
+                index++;                
             }
-
-            //綜合高中科
-            ws = _Wk.Worksheets[1];
-            ws.Name = "綜合高中科";
-            cs = ws.Cells;
-            index = 9;
-            foreach (KeyValuePair<String, List<StudentObj>> k in 綜合高中科)
-            {
-                cs[index, 1].PutValue(getDeptCode(k.Key)); //科別代碼
-                cs[index, 2].PutValue(k.Key); //科別名稱
-                cs[index, 4].PutValue(getClassCount(k.Value)); //班級數
-                cs[index, 5].PutValue(getClassCount(k.Value, "1")); //一年級班級數
-                cs[index, 6].PutValue(getClassCount(k.Value, "2")); //二年級班級數
-                cs[index, 7].PutValue(getClassCount(k.Value, "3")); //三年級班級數
-                cs[index, 8].PutValue(getClassCount(k.Value, "4")); //四年級班級數
-
-                cs[index, 9].PutValue(getStudentCount(k.Value)); //總學生數
-                cs[index, 10].PutValue(getStudentCount(k.Value, "1")); //總男學生數
-                cs[index, 11].PutValue(getStudentCount(k.Value, "0")); //總女學生數
-                cs[index, 12].PutValue(getStudentCount(k.Value, "1", "1")); //一年級男學生數
-                cs[index, 13].PutValue(getStudentCount(k.Value, "1", "0")); //一年級女學生數
-                cs[index, 14].PutValue(getStudentCount(k.Value, "2", "1")); //二年級男學生數
-                cs[index, 15].PutValue(getStudentCount(k.Value, "2", "0")); //二年級女學生數
-                cs[index, 16].PutValue(getStudentCount(k.Value, "3", "1")); //三年級男學生數
-                cs[index, 17].PutValue(getStudentCount(k.Value, "3", "0")); //三年級女學生數
-                cs[index, 18].PutValue(getStudentCount(k.Value, "4", "1")); //四年級男學生數
-                cs[index, 19].PutValue(getStudentCount(k.Value, "4", "0")); //四年級女學生數
-                cs[index, 20].PutValue(getStudentCount(k.Value, "5", "1")); //延修男學生數
-                cs[index, 21].PutValue(getStudentCount(k.Value, "5", "0")); //延修女學生數
-
-                cs[index, 22].PutValue(getGraduateStudentCount(k.Key));  //上學年畢業生總數
-                cs[index, 23].PutValue(getGraduateStudentCount(k.Key, "1")); //上學年男畢業生總數
-                cs[index, 24].PutValue(getGraduateStudentCount(k.Key, "0")); //上學年女畢業生總數
-
-                cs[index, 25].PutValue(getReStudentCount(k.Key));  //當學年重讀生總數
-                cs[index, 26].PutValue(getReStudentCount(k.Key, "1"));  //當學年重讀男生總數
-                cs[index, 27].PutValue(getReStudentCount(k.Key, "0"));  //當學年重讀女生總數
-                cs[index, 28].PutValue(getReStudentCount(k.Key, "1", "1")); //當學年重讀一年級男生總數
-                cs[index, 29].PutValue(getReStudentCount(k.Key, "1", "0")); //當學年重讀一年級女生總數
-                cs[index, 30].PutValue(getReStudentCount(k.Key, "2", "1")); //當學年重讀二年級男生總數
-                cs[index, 31].PutValue(getReStudentCount(k.Key, "2", "0")); //當學年重讀二年級女生總數
-                cs[index, 32].PutValue(getReStudentCount(k.Key, "3", "1")); //當學年重讀三年級男生總數
-                cs[index, 33].PutValue(getReStudentCount(k.Key, "3", "0")); //當學年重讀三年級女生總數
-                index++;
-            }
-
-            //職業科
-            ws = _Wk.Worksheets[2];
-            ws.Name = "職業科";
-            cs = ws.Cells;
-            index = 9;
-            foreach (KeyValuePair<String, List<StudentObj>> k in 職業科)
-            {
-                cs[index, 1].PutValue(getDeptCode(k.Key)); //科別代碼
-                cs[index, 2].PutValue(k.Key); //科別名稱
-                cs[index, 4].PutValue(getClassCount(k.Value)); //班級數
-                cs[index, 5].PutValue(getClassCount(k.Value, "1")); //一年級班級數
-                cs[index, 6].PutValue(getClassCount(k.Value, "2")); //二年級班級數
-                cs[index, 7].PutValue(getClassCount(k.Value, "3")); //三年級班級數
-                cs[index, 8].PutValue(getClassCount(k.Value, "4")); //四年級班級數
-
-                cs[index, 9].PutValue(getStudentCount(k.Value)); //總學生數
-                cs[index, 10].PutValue(getStudentCount(k.Value, "1")); //總男學生數
-                cs[index, 11].PutValue(getStudentCount(k.Value, "0")); //總女學生數
-                cs[index, 12].PutValue(getStudentCount(k.Value, "1", "1")); //一年級男學生數
-                cs[index, 13].PutValue(getStudentCount(k.Value, "1", "0")); //一年級女學生數
-                cs[index, 14].PutValue(getStudentCount(k.Value, "2", "1")); //二年級男學生數
-                cs[index, 15].PutValue(getStudentCount(k.Value, "2", "0")); //二年級女學生數
-                cs[index, 16].PutValue(getStudentCount(k.Value, "3", "1")); //三年級男學生數
-                cs[index, 17].PutValue(getStudentCount(k.Value, "3", "0")); //三年級女學生數
-                cs[index, 18].PutValue(getStudentCount(k.Value, "4", "1")); //四年級男學生數
-                cs[index, 19].PutValue(getStudentCount(k.Value, "4", "0")); //四年級女學生數
-                cs[index, 20].PutValue(getStudentCount(k.Value, "5", "1")); //延修男學生數
-                cs[index, 21].PutValue(getStudentCount(k.Value, "5", "0")); //延修女學生數
-
-                cs[index, 22].PutValue(getGraduateStudentCount(k.Key));  //上學年畢業生總數
-                cs[index, 23].PutValue(getGraduateStudentCount(k.Key, "1")); //上學年男畢業生總數
-                cs[index, 24].PutValue(getGraduateStudentCount(k.Key, "0")); //上學年女畢業生總數
-
-                cs[index, 25].PutValue(getReStudentCount(k.Key));  //當學年重讀生總數
-                cs[index, 26].PutValue(getReStudentCount(k.Key, "1"));  //當學年重讀男生總數
-                cs[index, 27].PutValue(getReStudentCount(k.Key, "0"));  //當學年重讀女生總數
-                cs[index, 28].PutValue(getReStudentCount(k.Key, "1", "1")); //當學年重讀一年級男生總數
-                cs[index, 29].PutValue(getReStudentCount(k.Key, "1", "0")); //當學年重讀一年級女生總數
-                cs[index, 30].PutValue(getReStudentCount(k.Key, "2", "1")); //當學年重讀二年級男生總數
-                cs[index, 31].PutValue(getReStudentCount(k.Key, "2", "0")); //當學年重讀二年級女生總數
-                cs[index, 32].PutValue(getReStudentCount(k.Key, "3", "1")); //當學年重讀三年級男生總數
-                cs[index, 33].PutValue(getReStudentCount(k.Key, "3", "0")); //當學年重讀三年級女生總數
-                index++;
-            }
+            
         }
 
         //複製範本
@@ -307,7 +244,7 @@ JOIN
             _CorrectList = new List<StudentObj>();
             foreach (StudentObj obj in studentlist)
             {
-                if ((obj.性別 != "0" && obj.性別 != "1") || (obj.年級 == ""))
+                if ((obj.性別 != "0" && obj.性別 != "1") || (obj.年級 == "" && obj.狀態!="2"))
                 {
                     _ErrorList.Add(obj);
                 }
@@ -318,47 +255,47 @@ JOIN
             }
         }
 
-        //按照科別取得字典,key=科別名稱,value=學生物件清單
-        private Dictionary<String, List<StudentObj>> getDicByDept(Dictionary<String, List<StudentObj>> deptDic, String deptName)
-        {
-            Dictionary<String, List<StudentObj>> dic = new Dictionary<string, List<StudentObj>>();
+        ////按照科別取得字典,key=科別名稱,value=學生物件清單
+        //private Dictionary<String, List<StudentObj>> getDicByDept(Dictionary<String, List<StudentObj>> deptDic, String deptName)
+        //{
+        //    Dictionary<String, List<StudentObj>> dic = new Dictionary<string, List<StudentObj>>();
 
-            if (deptName == "普通科" || deptName == "綜合高中科")
-            {
-                foreach (KeyValuePair<String, List<StudentObj>> k in deptDic)
-                {
-                    if (k.Key.Contains(deptName))
-                    {
-                        foreach (StudentObj student in k.Value)
-                        {
-                            if (!dic.ContainsKey(deptName))
-                            {
-                                dic.Add(deptName, new List<StudentObj>());
-                            }
-                            dic[deptName].Add(student);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                foreach (KeyValuePair<String, List<StudentObj>> k in deptDic)
-                {
-                    if (!k.Key.Contains("普通科") && !k.Key.Contains("綜合高中科"))
-                    {
-                        foreach (StudentObj student in k.Value)
-                        {
-                            if (!dic.ContainsKey(student.科別))
-                            {
-                                dic.Add(student.科別, new List<StudentObj>());
-                            }
-                            dic[student.科別].Add(student);
-                        }
-                    }
-                }
-            }
-            return dic;
-        }
+        //    if (deptName == "普通科" || deptName == "綜合高中科")
+        //    {
+        //        foreach (KeyValuePair<String, List<StudentObj>> k in deptDic)
+        //        {
+        //            if (k.Key.Contains(deptName))
+        //            {
+        //                foreach (StudentObj student in k.Value)
+        //                {
+        //                    if (!dic.ContainsKey(deptName))
+        //                    {
+        //                        dic.Add(deptName, new List<StudentObj>());
+        //                    }
+        //                    dic[deptName].Add(student);
+        //                }
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        foreach (KeyValuePair<String, List<StudentObj>> k in deptDic)
+        //        {
+        //            if (!k.Key.Contains("普通科") && !k.Key.Contains("綜合高中科"))
+        //            {
+        //                foreach (StudentObj student in k.Value)
+        //                {
+        //                    if (!dic.ContainsKey(student.科別))
+        //                    {
+        //                        dic.Add(student.科別, new List<StudentObj>());
+        //                    }
+        //                    dic[student.科別].Add(student);
+        //                }
+        //            }
+        //        }
+        //    }
+        //    return dic;
+        //}
 
         //建立科別代號表
         public void QueryDeptCode()
@@ -410,11 +347,14 @@ JOIN
             Dictionary<string, List<StudentObj>> dic = new Dictionary<string, List<StudentObj>>();
             foreach (StudentObj student in list)
             {
-                if (!dic.ContainsKey(student.班級ID))
+                if ((student.狀態 == "1" || student.狀態 == "2") && (student.年級 == "1" || student.年級 == "2" || student.年級 == "3" || student.年級 == "4"))
                 {
-                    dic.Add(student.班級ID, new List<StudentObj>());
+                    if (!dic.ContainsKey(student.班級ID))
+                    {
+                        dic.Add(student.班級ID, new List<StudentObj>());
+                    }
+                    dic[student.班級ID].Add(student);
                 }
-                dic[student.班級ID].Add(student);
             }
             return dic.Count;
         }
@@ -425,7 +365,7 @@ JOIN
             Dictionary<string, List<StudentObj>> dic = new Dictionary<string, List<StudentObj>>();
             foreach (StudentObj student in list)
             {
-                if (student.年級 == grade)
+                if ((student.狀態 == "1" || student.狀態 == "2") && student.年級 == grade)
                 {
                     if (!dic.ContainsKey(student.班級ID))
                     {
@@ -443,7 +383,7 @@ JOIN
             int count = 0;
             foreach (StudentObj student in list)
             {
-                if (student.狀態 == "1" || student.狀態 == "2")
+                if (((student.狀態 == "1" && (student.年級 == "1" || student.年級 == "2" || student.年級 == "3" || student.年級 == "4")) || student.狀態 == "2"))
                 {
                     count++;
                 }
@@ -457,7 +397,7 @@ JOIN
             int count = 0;
             foreach (StudentObj student in list)
             {
-                if (student.性別 == gender && (student.狀態 == "1" || student.狀態 == "2"))
+                if (student.性別 == gender && ((student.狀態 == "1" && (student.年級 == "1" || student.年級 == "2" || student.年級 == "3" || student.年級 == "4"))|| student.狀態 == "2"))
                 {
                     count++;
                 }
@@ -522,7 +462,34 @@ JOIN
             }
             return count;
         }
+        
+        //取得指定科別的修業生總數
+        private int getCompletionStudentCount(String deptName)
+        {
+            int count = 0;
+            foreach (CompletionStudentObj student in _CompletionStudentList)
+            {
+                if (student.科別.Contains(deptName))
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
 
+        //取得指定科別及性別的修業生總數
+        private int getCompletionStudentCount(String deptName, String gender)
+        {
+            int count = 0;
+            foreach (CompletionStudentObj student in _CompletionStudentList)
+            {
+                if (student.科別.Contains(deptName) && student.性別 == gender)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
         //取得指定科別的重讀生數量
         private int getReStudentCount(String deptName)
         {
@@ -571,7 +538,7 @@ JOIN
             int year = Convert.ToInt32(_SchoolYear)-1; //當前系統學年度-1
             List<GraduateStudentObj> list = new List<GraduateStudentObj>();
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
-            DataTable dt = _Q.Select("select ref_student_id,ss_name,ss_gender,ss_dept from update_record where update_code='501' and school_year='" + year + "'");
+            DataTable dt = _Q.Select("select ref_student_id,ss_name,ss_gender,ss_dept from update_record where update_code='501' and school_year=" + year );
 
             foreach (DataRow row in dt.Rows)
             {
@@ -579,13 +546,34 @@ JOIN
             }
             return list;
         }
+        //取得上學年修業生物件清單
+        private List<CompletionStudentObj> getCompletionStudent()
+        {
+            int year = Convert.ToInt32(_SchoolYear) - 1; //當前系統學年度-1
+            List<CompletionStudentObj> list = new List<CompletionStudentObj>();
+            FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
+            string sql = "select ref_student_id,ss_name,ss_gender,ss_dept from update_record";
+            if (chkUnGraduate)
+                sql = sql + " where update_code in ('366','364')";
+            else
+                sql = sql + " where update_code in ('366')";
+            sql = sql + " and school_year = " + year;
+            DataTable dt = _Q.Select(sql);
 
+            foreach (DataRow row in dt.Rows)
+            {
+                list.Add(new CompletionStudentObj(row));
+            }
+            return list;
+        }
         //取得重讀學生物件清單
         private List<ReStudentObj> getReStudent()
         {
             List<ReStudentObj> list = new List<ReStudentObj>();
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
-            DataTable dt = _Q.Select("select ref_student_id,ss_name,ss_gender,ss_grade_year,ss_dept from update_record where school_year='" + _SchoolYear + "' and update_desc like '%重讀%'");
+            DateTime dt_C = DateTime.Parse((Convert.ToInt32(_SchoolYear) + 1911).ToString() + "/10/01");
+            string sql = "select ref_student_id,ss_name,ss_gender,ss_grade_year,ss_dept from update_record where school_year = " + _SchoolYear + " and update_code in ('231','232','233','234','237', '238','239','240','241','242') " + " and update_date< '" + dt_C.ToShortDateString() + "'";
+            DataTable dt = _Q.Select(sql);
 
             foreach (DataRow row in dt.Rows)
             {
