@@ -51,15 +51,17 @@ namespace Abo
             _Group.Add("26","鄒(曹)族");
             _Group.Add("27","魯凱族");
             _Group.Add("28","賽夏族");
-            _Group.Add("29","雅美族");
+            _Group.Add("29", "雅美族(達悟族)");
             _Group.Add("2A","卲族");
             _Group.Add("2B","噶嗎蘭族");
-            _Group.Add("2C","太魯閣族");
+            _Group.Add("2C", "太魯閣族(德魯固族)");
             _Group.Add("2D","撒奇萊雅族");
             _Group.Add("2E","賽德克族");
+            _Group.Add("2F", "拉阿魯哇族");
+            _Group.Add("2G","卡那卡那富族");
             _Group.Add("20","其他");
-
-            foreach(KeyValuePair<String,String> k in _Group)
+            
+            foreach (KeyValuePair<String,String> k in _Group)
             {
                     Column1.Items.Add(k.Value);
             }
@@ -282,7 +284,17 @@ namespace Abo
             QueryHelper _Q = new QueryHelper();
 
             //SQL查詢要求的年級資料
-            string sql= "select student.id,student.name,student.student_number,student.gender,student.ref_class_id,student.status,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id from student left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id left join tag_student on student.id= tag_student.ref_student_id where student.status in ('1','2') AND  dept.ref_dept_group_id  in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")"; 
+            string sql = @"WITH student_data AS (
+                         SELECT student.id,student.name,student.student_number,student.gender
+                         ,student.ref_class_id,student.status,class.class_name
+                         ,class.grade_year,tag_student.ref_tag_id
+                         , COALESCE(student.ref_dept_id,class.ref_dept_id ) AS _dept                         
+                         FROM student JOIN class ON student.ref_class_id=class.id 
+                              LEFT JOIN tag_student ON student.id = tag_student.ref_student_id)
+                    SELECT
+                            student_data.*, dept.name AS dept_name,dept.ref_dept_group_id
+                        FROM
+                            student_data  JOIN  dept ON student_data._dept= dept.id  where student_data.status in ('1','2')  AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")";
             DataTable dt = _Q.Select(sql);
 
             //建立myStuden物件放至List中
@@ -619,7 +631,18 @@ namespace Abo
             int year = Convert.ToInt32(_SchoolYear) - 1; //當前系統學年度-1
             Dictionary<String, GraduateStudentObj> dic = new Dictionary<string, GraduateStudentObj>();
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
-            DataTable dt = _Q.Select("select update_record.ref_student_id,update_record.ss_name,student.student_number,update_record.ss_gender,update_record.ss_dept,tag_student.ref_tag_id from update_record left join tag_student on update_record.ref_student_id = tag_student.ref_student_id left join student on update_record.ref_student_id=student.id  left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id where update_code='501' and school_year=" + year + " AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")");
+            string sql=@"WITH student_data AS (
+                         SELECT update_record.ref_student_id, update_record.ss_name,student.student_number, update_record.ss_gender,update_record.ss_dept
+                         , COALESCE(student.ref_dept_id,class.ref_dept_id ) AS _dept
+                         , update_code, school_year,tag_student.ref_tag_id
+                         FROM student JOIN class ON student.ref_class_id=class.id
+                              LEFT JOIN update_record ON  update_record.ref_student_id=student.id
+                              LEFT JOIN tag_student ON update_record.ref_student_id = tag_student.ref_student_id)
+                    SELECT
+                            student_data.*, dept.name AS dept_name,dept.ref_dept_group_id
+                        FROM
+                            student_data  JOIN  dept ON student_data._dept= dept.id ";
+            DataTable dt = _Q.Select(sql+" where update_code='501' and school_year=" + year + " AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")");
 
             foreach (DataRow row in dt.Rows)
             {
@@ -629,15 +652,15 @@ namespace Abo
                 String gender = row["ss_gender"].ToString();
                 String dept = row["ss_dept"].ToString();
                 String tagid = row["ref_tag_id"].ToString();
-                if(!dic.ContainsKey(id))
+                if (!dic.ContainsKey(id))
                 {
-                    dic.Add(id, new GraduateStudentObj(id, name, student_number,gender, dept, new List<String>()));
+                    dic.Add(id, new GraduateStudentObj(id, name, student_number, gender, dept, new List<String>()));
                 }
                 dic[id].TagID.Add(tagid);
             }
 
             //判斷性別欄位是否異常
-            foreach(String id in dic.Keys)
+            foreach (String id in dic.Keys)
             {
                 if(dic[id].Gender != "1" && dic[id].Gender != "0")
                 {
@@ -707,12 +730,22 @@ namespace Abo
             int year = Convert.ToInt32(_SchoolYear) - 1; //當前系統學年度-1
             Dictionary<String, CompletionStudentObj> dic = new Dictionary<string, CompletionStudentObj>();
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
-            string sql = @"select update_record.ref_student_id,update_record.ss_name,student.student_number,update_record.ss_gender,update_record.ss_dept,tag_student.ref_tag_id from update_record left join tag_student on update_record.ref_student_id = tag_student.ref_student_id left join student on update_record.ref_student_id = student.id  left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id ";
+            string sql = @"WITH student_data AS (
+                         SELECT update_record.ref_student_id, update_record.ss_name,student.student_number, update_record.ss_gender,update_record.ss_dept
+                         , COALESCE(student.ref_dept_id,class.ref_dept_id ) AS _dept
+                         , update_code, school_year,tag_student.ref_tag_id
+                         FROM student JOIN class ON student.ref_class_id=class.id
+                              LEFT JOIN update_record ON  update_record.ref_student_id=student.id
+                              LEFT JOIN tag_student ON update_record.ref_student_id = tag_student.ref_student_id)
+                    SELECT
+                            student_data.*, dept.name AS dept_name,dept.ref_dept_group_id
+                        FROM
+                            student_data  JOIN  dept ON student_data._dept= dept.id ";            
             if (chkUnGraduate)
                 sql = sql + "where update_code in ('366','364')";
             else
                 sql = sql + "where update_code in ('366')";
-            sql=sql+ " and school_year=" + year + " AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")"; 
+            sql = sql + " and school_year=" + year + " AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")";
             DataTable dt = _Q.Select(sql);
 
             foreach (DataRow row in dt.Rows)

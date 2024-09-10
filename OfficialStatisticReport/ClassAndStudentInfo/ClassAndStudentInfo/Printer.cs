@@ -29,12 +29,12 @@ namespace ClassAndStudentInfo
         string  Public_BranchID;
         string Public_BranchName;
         Boolean HasData;
-        Boolean chkUnGraduate;
+        Boolean chkUnGraduate;        
         public void Start(string BranchID,string BranchName,Boolean UnGraduate)
         {
             Public_BranchID = BranchID;
             Public_BranchName = BranchName;
-            chkUnGraduate = UnGraduate;
+            chkUnGraduate = UnGraduate;            
             FISCA.Presentation.MotherForm.SetStatusBarMessage("正在產生班級及學生概況統計表...");
             _BGWClassStudentAbsenceDetail = new BackgroundWorker();
             _BGWClassStudentAbsenceDetail.DoWork += new DoWorkEventHandler(_BGWClassStudentAbsenceDetail_DoWork);
@@ -103,7 +103,7 @@ JOIN
                 
             DataTable dt = _Q.Select(sql);
             List <StudentObj> StudentList = new List<StudentObj>();
-            if (dt.Rows.Count > 0)
+            if (dt.Rows.Count > 0 || _GraduateStudentList.Count>0 || _CompletionStudentList.Count>0 || _ReStudentList.Count>0)
             {
                 foreach (DataRow row in dt.Rows)
                 {
@@ -124,7 +124,7 @@ JOIN
             }
             else
             {
-                MessageBox.Show("該部門沒有科別");
+                MessageBox.Show("該部門沒有科別有資料");
                 HasData = false;
 
             }
@@ -136,11 +136,11 @@ JOIN
             Dictionary<String, List<StudentObj>> Dic = new Dictionary<string, List<StudentObj>>();
             foreach (StudentObj obj in StudentList)
             {
-                if (!Dic.ContainsKey(obj.科別)) //建立科別
+                if (!Dic.ContainsKey(obj.科別ID +"_"+obj.科別)) //建立科別
                 {
-                    Dic.Add(obj.科別, new List<StudentObj>());
+                    Dic.Add(obj.科別ID + "_" + obj.科別, new List<StudentObj>());
                 }
-                Dic[obj.科別].Add(obj);
+                Dic[obj.科別ID + "_" + obj.科別].Add(obj);
             }
             return Dic;
         }
@@ -188,10 +188,14 @@ JOIN
             cs[4, 0].PutValue(K12.Data.School.Code);
             cs[4, 2].PutValue(Public_BranchName);
             cs[0, 29].PutValue(K12.Data.School.ChineseName+"(教務處)");
+            string DeptName = "";
             foreach (KeyValuePair<String, List<StudentObj>> k in DeptDic)
             {
+                DeptName =k.Key.Substring(k.Key.Split('_')[0].Length+1,k.Key.Length-k.Key.Split('_')[0].Length-1);
+                //cs[index, 1].PutValue(getDeptCode(k.Key)); //科別代碼
+                //cs[index, 2].PutValue(k.Key); //科別名稱
                 cs[index, 1].PutValue(getDeptCode(k.Key)); //科別代碼
-                cs[index, 2].PutValue(k.Key); //科別名稱
+                cs[index, 2].PutValue(DeptName); //科別名稱
                 cs[index, 4].PutValue(getClassCount(k.Value)); //班級數
                 cs[index, 5].PutValue(getClassCount(k.Value, "1")); //一年級班級數
                 cs[index, 6].PutValue(getClassCount(k.Value, "2")); //二年級班級數
@@ -309,7 +313,7 @@ JOIN
                 String code = row["code"].ToString();
                 if (code == "") code = "NoCode";
                 String name = row["name"].ToString();
-                Dept_ref.Add(id + "_" + code, name);
+                Dept_ref.Add(id + "_" + code, id + "_" + name);
             }
         }
 
@@ -347,7 +351,7 @@ JOIN
             Dictionary<string, List<StudentObj>> dic = new Dictionary<string, List<StudentObj>>();
             foreach (StudentObj student in list)
             {
-                if ((student.狀態 == "1" || student.狀態 == "2") && (student.年級 == "1" || student.年級 == "2" || student.年級 == "3" || student.年級 == "4"))
+                if ((student.狀態 == "1" || student.狀態 == "2") && (student.年級 == "1" || student.年級 == "2" || student.年級 == "3" ))
                 {
                     if (!dic.ContainsKey(student.班級ID))
                     {
@@ -383,7 +387,7 @@ JOIN
             int count = 0;
             foreach (StudentObj student in list)
             {
-                if (((student.狀態 == "1" && (student.年級 == "1" || student.年級 == "2" || student.年級 == "3" || student.年級 == "4")) || student.狀態 == "2"))
+                if (((student.狀態 == "1" && (student.年級 == "1" || student.年級 == "2" || student.年級 == "3" )) || student.狀態 == "2"))
                 {
                     count++;
                 }
@@ -397,7 +401,7 @@ JOIN
             int count = 0;
             foreach (StudentObj student in list)
             {
-                if (student.性別 == gender && ((student.狀態 == "1" && (student.年級 == "1" || student.年級 == "2" || student.年級 == "3" || student.年級 == "4"))|| student.狀態 == "2"))
+                if (student.性別 == gender && ((student.狀態 == "1" && (student.年級 == "1" || student.年級 == "2" || student.年級 == "3" ))|| student.狀態 == "2"))
                 {
                     count++;
                 }
@@ -441,7 +445,7 @@ JOIN
             int count = 0;
             foreach (GraduateStudentObj student in _GraduateStudentList)
             {
-                if (student.科別.Contains(deptName))
+                if (student.科別ID+"_"+student.科別==deptName)
                 {
                     count++;
                 }
@@ -455,7 +459,7 @@ JOIN
             int count = 0;
             foreach (GraduateStudentObj student in _GraduateStudentList)
             {
-                if (student.科別.Contains(deptName) && student.性別 == gender)
+                if (student.科別ID + "_" + student.科別 == deptName && student.性別 == gender)
                 {
                     count++;
                 }
@@ -469,7 +473,7 @@ JOIN
             int count = 0;
             foreach (CompletionStudentObj student in _CompletionStudentList)
             {
-                if (student.科別.Contains(deptName))
+                if (student.科別ID + "_" + student.科別 == deptName)
                 {
                     count++;
                 }
@@ -483,7 +487,7 @@ JOIN
             int count = 0;
             foreach (CompletionStudentObj student in _CompletionStudentList)
             {
-                if (student.科別.Contains(deptName) && student.性別 == gender)
+                if (student.科別ID + "_" + student.科別 == deptName && student.性別 == gender)
                 {
                     count++;
                 }
@@ -496,7 +500,7 @@ JOIN
             int count = 0;
             foreach (ReStudentObj student in _ReStudentList)
             {
-                if (student.科別.Contains(deptName))
+                if (student.科別ID + "_" + student.科別 == deptName)
                 {
                     count++;
                 }
@@ -510,7 +514,7 @@ JOIN
             int count = 0;
             foreach (ReStudentObj student in _ReStudentList)
             {
-                if (student.科別.Contains(deptName) && student.性別 == gender)
+                if (student.科別ID + "_" + student.科別 == deptName && student.性別 == gender)
                 {
                     count++;
                 }
@@ -524,7 +528,7 @@ JOIN
             int count = 0;
             foreach (ReStudentObj student in _ReStudentList)
             {
-                if (student.科別.Contains(deptName) && student.年級 == grade && student.性別 == gender)
+                if (student.科別ID + "_" + student.科別 == deptName && student.年級 == grade && student.性別 == gender)
                 {
                     count++;
                 }
@@ -538,7 +542,17 @@ JOIN
             int year = Convert.ToInt32(_SchoolYear)-1; //當前系統學年度-1
             List<GraduateStudentObj> list = new List<GraduateStudentObj>();
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
-            DataTable dt = _Q.Select("select ref_student_id,ss_name,ss_gender,ss_dept from update_record where update_code='501' and school_year=" + year );
+            DataTable dt = _Q.Select(@"WITH student_data AS (
+                         SELECT update_record.ref_student_id, update_record.ss_name, update_record.ss_gender
+                         , update_record.ss_dept, COALESCE(student.ref_dept_id,class.ref_dept_id ) AS _dept
+                         , update_code, school_year
+                         FROM student JOIN class ON student.ref_class_id=class.id
+                              LEFT JOIN update_record ON  update_record.ref_student_id=student.id)
+                    SELECT
+                            student_data.*, dept.name AS dept_name,dept.ref_dept_group_id
+                        FROM
+                            student_data  JOIN  dept ON student_data._dept= dept.id  where update_code='501' and school_year=" + year + " AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")");
+           
 
             foreach (DataRow row in dt.Rows)
             {
@@ -552,12 +566,22 @@ JOIN
             int year = Convert.ToInt32(_SchoolYear) - 1; //當前系統學年度-1
             List<CompletionStudentObj> list = new List<CompletionStudentObj>();
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
-            string sql = "select ref_student_id,ss_name,ss_gender,ss_dept from update_record";
+            string sql = @"WITH student_data AS (
+                         SELECT update_record.ref_student_id, update_record.ss_name, update_record.ss_gender
+                         , update_record.ss_dept, COALESCE(student.ref_dept_id,class.ref_dept_id ) AS _dept
+                         , update_code, school_year
+                         FROM student JOIN class ON student.ref_class_id=class.id
+                              LEFT JOIN update_record ON  update_record.ref_student_id=student.id)
+                    SELECT
+                            student_data.*, dept.name AS dept_name,dept.ref_dept_group_id
+                        FROM
+                            student_data  JOIN  dept ON student_data._dept= dept.id ";                 
             if (chkUnGraduate)
                 sql = sql + " where update_code in ('366','364')";
             else
                 sql = sql + " where update_code in ('366')";
             sql = sql + " and school_year = " + year;
+            sql=sql+ " AND dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")"; 
             DataTable dt = _Q.Select(sql);
 
             foreach (DataRow row in dt.Rows)
@@ -572,9 +596,22 @@ JOIN
             List<ReStudentObj> list = new List<ReStudentObj>();
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
             DateTime dt_C = DateTime.Parse((Convert.ToInt32(_SchoolYear) + 1911).ToString() + "/10/01");
-            string sql = "select ref_student_id,ss_name,ss_gender,ss_grade_year,ss_dept from update_record where school_year = " + _SchoolYear + " and update_code in ('231','232','233','234','237', '238','239','240','241','242') " + " and update_date< '" + dt_C.ToShortDateString() + "'";
+            string sql = @"WITH student_data AS (
+                         SELECT update_record.ref_student_id, update_record.ss_name, update_record.ss_gender
+                         , update_record.ss_dept, 
+             update_record.update_date,update_record.ss_grade_year,
+COALESCE(student.ref_dept_id,class.ref_dept_id ) AS _dept
+                         , update_code, school_year
+                         FROM student JOIN class ON student.ref_class_id=class.id
+                              LEFT JOIN update_record ON  update_record.ref_student_id=student.id)
+                    SELECT
+                            student_data.*, dept.name AS dept_name,dept.ref_dept_group_id
+                        FROM
+                            student_data  JOIN  dept ON student_data._dept= dept.id 
+                 where school_year = " + _SchoolYear + " and update_code in ('231','232','233','234','237', '238','239','240','241','242') " + " and update_date< '" + dt_C.ToShortDateString() + "'";
+            sql = sql + " AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")";
             DataTable dt = _Q.Select(sql);
-
+            
             foreach (DataRow row in dt.Rows)
             {
                 list.Add(new ReStudentObj(row));

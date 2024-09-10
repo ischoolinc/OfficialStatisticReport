@@ -13,6 +13,7 @@ namespace ClassAndStudentInfo
         public string 學生名字 { get; set; }
         public string 性別 { get; set; }
         public string 科別 { get; set; }
+        public string 科別ID { get; set; }
 
         public CompletionStudentObj(DataRow row)
         {
@@ -20,6 +21,7 @@ namespace ClassAndStudentInfo
             學生名字 = row["ss_name"].ToString();
             性別 = row["ss_gender"].ToString();
             科別 = row["ss_dept"].ToString();
+            科別ID = row["_dept"].ToString();
         }
     }
 }

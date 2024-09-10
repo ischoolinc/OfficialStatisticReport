@@ -131,7 +131,7 @@ namespace UpdateRecordReport
 
             _DefaultItem.Add("死亡", new List<string>(new string[] { "361" }));
             _DefaultItem.Add("輔導延修", new List<string>(new string[] { "364" }));
-            _DefaultItem.Add("修業年限期滿", new List<string>(new string[] { "365" }));
+            _DefaultItem.Add("修業年限期滿", new List<string>(new string[] { "365","372" }));
             //_DefaultItem.Add("未達畢業標準", new List<string>(new string[] { "366" }));
 
             _DefaultItem.Add("未達畢業標準(指德性評量) ", new List<string>(new string[] { "366" }));
@@ -238,8 +238,20 @@ namespace UpdateRecordReport
             //SQL查詢資料
             QueryHelper _Q = new QueryHelper();
             StringBuilder sb = new StringBuilder();
-            sb.Append("select update_record.id,ref_student_id,ss_name,ss_student_number,ss_gender,ss_grade_year,ss_dept,update_code,student.status from update_record left join student on ref_student_id = student.id left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id ");
-            sb.Append(string.Format("where school_year={0} and semester={1} and update_code in ({2}) and dept.ref_dept_group_id in ({3}) ", _SchoolYear, _Semester, updateCode,  Public_BranchID.Substring(0,Public_BranchID.Length-1)));
+
+            sb.Append(@"WITH student_data AS (
+                        SELECT update_record.id, update_record.ref_student_id, update_record.ss_name
+                         , ss_student_number, update_record.ss_gender, update_record.ss_grade_year,update_record.ss_dept
+                         , COALESCE(student.ref_dept_id,class.ref_dept_id ) AS _dept
+                         , update_code, school_year,semester, student.status
+                          FROM student JOIN class ON student.ref_class_id=class.id
+                               LEFT JOIN update_record ON update_record.ref_student_id=student.id )
+                    SELECT
+                            student_data.*, dept.name AS dept_name, dept.ref_dept_group_id
+                        FROM
+                            student_data JOIN  dept ON student_data._dept= dept.id");
+            //sb.Append("select update_record.id,ref_student_id,ss_name,ss_student_number,ss_gender,ss_grade_year,ss_dept,update_code,student.status from update_record left join student on ref_student_id = student.id left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id ");
+            sb.Append(string.Format(" where school_year={0} and semester={1} and update_code in ({2}) and dept.ref_dept_group_id in ({3}) ", _SchoolYear, _Semester, updateCode,  Public_BranchID.Substring(0,Public_BranchID.Length-1)));
 
             DataTable dt = _Q.Select(sb.ToString());
 

@@ -45,7 +45,7 @@ namespace ClassAndStudentInfo
             this.btnPrint.AccessibleRole = System.Windows.Forms.AccessibleRole.PushButton;
             this.btnPrint.BackColor = System.Drawing.Color.Transparent;
             this.btnPrint.ColorTable = DevComponents.DotNetBar.eButtonColor.OrangeWithBackground;
-            this.btnPrint.Location = new System.Drawing.Point(74, 338);
+            this.btnPrint.Location = new System.Drawing.Point(73, 338);
             this.btnPrint.Name = "btnPrint";
             this.btnPrint.Size = new System.Drawing.Size(120, 45);
             this.btnPrint.Style = DevComponents.DotNetBar.eDotNetBarStyle.StyleManagerControlled;
@@ -58,7 +58,7 @@ namespace ClassAndStudentInfo
             this.btnCancel.AccessibleRole = System.Windows.Forms.AccessibleRole.PushButton;
             this.btnCancel.BackColor = System.Drawing.Color.Transparent;
             this.btnCancel.ColorTable = DevComponents.DotNetBar.eButtonColor.OrangeWithBackground;
-            this.btnCancel.Location = new System.Drawing.Point(213, 338);
+            this.btnCancel.Location = new System.Drawing.Point(212, 338);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(120, 45);
             this.btnCancel.Style = DevComponents.DotNetBar.eDotNetBarStyle.StyleManagerControlled;
@@ -68,7 +68,7 @@ namespace ClassAndStudentInfo
             // 
             // txtTitle
             // 
-            this.txtTitle.Location = new System.Drawing.Point(186, 285);
+            this.txtTitle.Location = new System.Drawing.Point(185, 285);
             this.txtTitle.Name = "txtTitle";
             this.txtTitle.Size = new System.Drawing.Size(181, 27);
             this.txtTitle.TabIndex = 18;
@@ -82,7 +82,7 @@ namespace ClassAndStudentInfo
             // 
             this.labelX2.BackgroundStyle.Class = "";
             this.labelX2.BackgroundStyle.CornerType = DevComponents.DotNetBar.eCornerType.Square;
-            this.labelX2.Location = new System.Drawing.Point(13, 285);
+            this.labelX2.Location = new System.Drawing.Point(12, 285);
             this.labelX2.Name = "labelX2";
             this.labelX2.Size = new System.Drawing.Size(179, 37);
             this.labelX2.TabIndex = 17;

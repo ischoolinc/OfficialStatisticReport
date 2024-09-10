@@ -152,7 +152,7 @@ namespace Abo
             // PrintBranch
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(393, 397);
+            this.ClientSize = new System.Drawing.Size(393, 402);
             this.Controls.Add(this.chkUnGraduate);
             this.Controls.Add(this.txtTitle);
             this.Controls.Add(this.labelX2);

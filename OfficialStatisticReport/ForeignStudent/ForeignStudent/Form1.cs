@@ -277,7 +277,18 @@ namespace ForeignStudent
             QueryHelper _Q = new QueryHelper();
             
             //SQL查詢要求的年級資料
-            string sql = "select student.id,student.name,student.student_number,student.gender,student.ref_class_id,student.status,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id from student left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id left join tag_student on student.id= tag_student.ref_student_id where student.status in ('1','2')  AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")";
+            string sql = @"WITH student_data AS (
+                         SELECT student.id,student.name,student.student_number,student.gender
+                         ,student.ref_class_id,student.status,class.class_name
+                         ,class.grade_year,tag_student.ref_tag_id
+                         , COALESCE(student.ref_dept_id,class.ref_dept_id ) AS _dept                         
+                         FROM student JOIN class ON student.ref_class_id=class.id 
+                              LEFT JOIN tag_student ON student.id = tag_student.ref_student_id)
+                    SELECT
+                            student_data.*, dept.name AS dept_name,dept.ref_dept_group_id
+                        FROM
+                            student_data  JOIN  dept ON student_data._dept= dept.id  
+                      where student_data.status in ('1','2')  AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")";
             DataTable dt = _Q.Select(sql);
 
             //建立myStuden物件放至List中
@@ -624,7 +635,17 @@ namespace ForeignStudent
             int year = Convert.ToInt32(_SchoolYear) - 1; //當前系統學年度-1
             Dictionary<String, GraduateStudentObj> dic = new Dictionary<string, GraduateStudentObj>();
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
-            string sql= "select update_record.ref_student_id,update_record.ss_name,student.student_number,update_record.ss_gender,update_record.ss_dept,tag_student.ref_tag_id from update_record left join tag_student on update_record.ref_student_id = tag_student.ref_student_id left join student on update_record.ref_student_id = student.id left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id where update_code='501' and school_year=" + year + " AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")";
+            string sql= @"WITH student_data AS (
+                         SELECT update_record.ref_student_id, update_record.ss_name,student.student_number, update_record.ss_gender,update_record.ss_dept
+                         , COALESCE(student.ref_dept_id,class.ref_dept_id ) AS _dept
+                         , update_code, school_year,tag_student.ref_tag_id
+                         FROM student JOIN class ON student.ref_class_id=class.id
+                              LEFT JOIN update_record ON  update_record.ref_student_id=student.id
+                              LEFT JOIN tag_student ON update_record.ref_student_id = tag_student.ref_student_id)
+                    SELECT
+                            student_data.*, dept.name AS dept_name,dept.ref_dept_group_id
+                        FROM
+                            student_data  JOIN  dept ON student_data._dept= dept.id  where update_code ='501' and school_year=" + year + " AND  dept.ref_dept_group_id in (" + Public_BranchID.Substring(0, Public_BranchID.Length - 1) + ")";
             DataTable dt = _Q.Select(sql);
 
             foreach (DataRow row in dt.Rows)
@@ -710,7 +731,17 @@ namespace ForeignStudent
             Dictionary<String, CompletionStudentObj> dic = new Dictionary<string, CompletionStudentObj>();
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
 
-            string sql = "select update_record.ref_student_id,update_record.ss_name,student.student_number,update_record.ss_gender,update_record.ss_dept,tag_student.ref_tag_id from update_record left join tag_student on update_record.ref_student_id = tag_student.ref_student_id left join student on update_record.ref_student_id = student.id left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id ";
+            string sql = @"WITH student_data AS (
+                         SELECT update_record.ref_student_id, update_record.ss_name,student.student_number, update_record.ss_gender,update_record.ss_dept
+                         , COALESCE(student.ref_dept_id,class.ref_dept_id ) AS _dept
+                         , update_code, school_year,tag_student.ref_tag_id
+                         FROM student JOIN class ON student.ref_class_id=class.id
+                              LEFT JOIN update_record ON  update_record.ref_student_id=student.id
+                              LEFT JOIN tag_student ON update_record.ref_student_id = tag_student.ref_student_id)
+                    SELECT
+                            student_data.*, dept.name AS dept_name,dept.ref_dept_group_id
+                        FROM
+                            student_data  JOIN  dept ON student_data._dept= dept.id ";
             if (chkUnGraduate)
                 sql = sql + "where update_code in ('366','364')";
             else

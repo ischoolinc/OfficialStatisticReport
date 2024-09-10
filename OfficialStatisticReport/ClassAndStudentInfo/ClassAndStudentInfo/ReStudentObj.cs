@@ -13,7 +13,7 @@ namespace ClassAndStudentInfo
         public string 性別 { get; set; }
         public string 年級 { get; set; }
         public string 科別 { get; set; }
-        
+        public string 科別ID { get; set; }
 
         public ReStudentObj(DataRow row)
         {
@@ -22,7 +22,7 @@ namespace ClassAndStudentInfo
             性別 = row["ss_gender"].ToString();
             年級 = row["ss_grade_year"].ToString();
             科別 = row["ss_dept"].ToString();
-            
+            科別ID = row["_dept"].ToString();
         }
     }
 }

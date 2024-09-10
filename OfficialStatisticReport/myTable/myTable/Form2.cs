@@ -194,10 +194,8 @@ namespace myTable
                 List<string> EnterSchoolWays = new List<string>();
 
                 #region 1.入學方式
-                //11種入學方式(2023/7 新增b1,b2)
+                //九種入學方式
                 EnterSchoolWays.Add("入學方式:免試入學--校內直升");
-                EnterSchoolWays.Add("入學方式:免試入學--優先免試"); // b1
-                EnterSchoolWays.Add("入學方式:免試入學--完全免試"); // b2
                 EnterSchoolWays.Add("入學方式:免試入學--就學區免試(含共同就學區)");
                 EnterSchoolWays.Add("入學方式:免試入學--技優甄審");
                 EnterSchoolWays.Add("入學方式:免試入學--免試獨招");
@@ -319,8 +317,6 @@ namespace myTable
             //}
 
             Column2.Items.Add("入學方式:免試入學--校內直升");
-            Column2.Items.Add("入學方式:免試入學--優先免試");
-            Column2.Items.Add("入學方式:免試入學--完全免試");
             Column2.Items.Add("入學方式:免試入學--就學區免試(含共同就學區)");
             Column2.Items.Add("入學方式:免試入學--技優甄審");
             Column2.Items.Add("入學方式:免試入學--免試獨招");
@@ -867,7 +863,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
 
 
             #region 1.入學方式 TagID 整理
-            //下面共11種入學方式
+            //下面共九種入學方式
 
             // 入學方式:免試入學--校內直升 ，所標記類別 tag ID List
             List<string> enter_Way_NoExam_SchoolPromote_ID_list = new List<string>();
@@ -882,35 +878,6 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                     }
                 }
             }
-
-            // 入學方式:免試入學--優先免試 ，所標記類別 tag ID List
-            List<string> enter_Way_NoExam_School_B1_ID_list = new List<string>();
-
-            foreach (KeyValuePair<String, List<String>> map in XML_mappingData)
-            {
-                if ("" + map.Key == "入學方式:免試入學--優先免試")
-                {
-                    foreach (String s in map.Value)
-                    {
-                        enter_Way_NoExam_School_B1_ID_list.Add(s);
-                    }
-                }
-            }
-
-            // 入學方式:免試入學--完全免試 ，所標記類別 tag ID List
-            List<string> enter_Way_NoExam_School_B2_ID_list = new List<string>();
-
-            foreach (KeyValuePair<String, List<String>> map in XML_mappingData)
-            {
-                if ("" + map.Key == "入學方式:免試入學--完全免試")
-                {
-                    foreach (String s in map.Value)
-                    {
-                        enter_Way_NoExam_School_B2_ID_list.Add(s);
-                    }
-                }
-            }
-
 
             // 入學方式:免試入學--就學區免試(含共同就學區) ，所標記類別 tag ID List
             List<string> enter_Way_NoExam_SchoolArea_ID_list = new List<string>();
@@ -1027,8 +994,6 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
             List<List<string>> EnterWayTagsID_Mapping_List = new List<List<string>>();
 
             EnterWayTagsID_Mapping_List.Add(enter_Way_NoExam_SchoolPromote_ID_list);
-            EnterWayTagsID_Mapping_List.Add(enter_Way_NoExam_School_B1_ID_list);
-            EnterWayTagsID_Mapping_List.Add(enter_Way_NoExam_School_B2_ID_list);
             EnterWayTagsID_Mapping_List.Add(enter_Way_NoExam_SchoolArea_ID_list);
             EnterWayTagsID_Mapping_List.Add(enter_Way_NoExam_GoodSkill_ID_list);
             EnterWayTagsID_Mapping_List.Add(enter_Way_NoExam_NoExam_ID_list);
@@ -1126,10 +1091,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
 
             //新生入學方式統計表-- 填值
             Workbook wk2 = new Workbook();
-            //wk2.Open(new MemoryStream(Properties.Resources.template_105_7_ver_)); //開啟範本文件 // 2017/1/17 穎驊筆記，在此載入105/7 最新版
-
-            wk2.Open(new MemoryStream(Properties.Resources.template_112_7_ver_)); //開啟範本文件 // 2023/9/22 CT
-
+            wk2.Open(new MemoryStream(Properties.Resources.template_105_7_ver_)); //開啟範本文件 // 2017/1/17 穎驊筆記，在此載入105/7 最新版
 
             _wk.Worksheets[0].Copy(wk2.Worksheets[0]); //複製範本文件
             ws = _wk.Worksheets[0];
@@ -1166,19 +1128,10 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                     summary.Add(s); //展開dic_byDept,收集內容的myStudent物件
                 }
 
-                #region 學生 依入學11大方式 做的分類
+                #region 學生 依入學九大方式 做的分類
                 //入學方式:免試入學--校內直升 ，Student List           
                 List<myStudent> enter_Way_NoExam_SchoolPromote_Student_list = new List<myStudent>();
                 enter_Way_NoExam_SchoolPromote_Student_list = filter.getListByTagId(enter_Way_NoExam_SchoolPromote_ID_list, k.Value);
-
-                //入學方式:免試入學--優先免試 ，Student List           
-                List<myStudent> enter_Way_NoExam_School_B1_Student_list = new List<myStudent>();
-                enter_Way_NoExam_School_B1_Student_list = filter.getListByTagId(enter_Way_NoExam_School_B1_ID_list, k.Value);
-
-                //入學方式:免試入學--完全免試 ，Student List           
-                List<myStudent> enter_Way_NoExam_School_B2_Student_list = new List<myStudent>();
-                enter_Way_NoExam_School_B2_Student_list = filter.getListByTagId(enter_Way_NoExam_School_B2_ID_list, k.Value);
-
 
                 //入學方式:免試入學--就學區免試(含共同就學區) ，Student List           
                 List<myStudent> enter_Way_NoExam_SchoolArea_Student_list = new List<myStudent>();
@@ -1215,8 +1168,6 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 List<List<myStudent>> All_EnterWays_StudentList = new List<List<myStudent>>();
 
                 All_EnterWays_StudentList.Add(enter_Way_NoExam_SchoolPromote_Student_list);
-                All_EnterWays_StudentList.Add(enter_Way_NoExam_School_B1_Student_list);
-                All_EnterWays_StudentList.Add(enter_Way_NoExam_School_B2_Student_list);
                 All_EnterWays_StudentList.Add(enter_Way_NoExam_SchoolArea_Student_list);
                 All_EnterWays_StudentList.Add(enter_Way_NoExam_GoodSkill_Student_list);
                 All_EnterWays_StudentList.Add(enter_Way_NoExam_NoExam_Student_list);
@@ -1229,7 +1180,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
 
                 #region 填值， 以入學方式、入學身分 二因素 做 網狀Mapping
 
-                //  其中 入學方式:免試入學--技優甄審  、 其他  因欄位與其他不同 需要做另外處理(可以自行 去看 Resource/ template(105.7ver) 內有許多 合併欄位)  112.7
+                //  其中 入學方式:免試入學--技優甄審  、 其他  因欄位與其他不同 需要做另外處理(可以自行 去看 Resource/ template(105.7ver) 內有許多 合併欄位)
                 foreach (List<myStudent> EnterWays_StudentList in All_EnterWays_StudentList)
                 {
                     if (EnterWays_StudentList == enter_Way_NoExam_GoodSkill_Student_list)
@@ -1272,8 +1223,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
 
                             cs[index, col].PutValue(EnterIdentityTagsID_Mapping_StudentList_collect__enterWay_Student_list.Count);
 
-                            //if (col == 18 || col == 20)
-                            if (col == 26 || col == 28)
+                            if (col == 18 || col == 20)
                             {
                                 col = col + 2;
                             }
@@ -1342,25 +1292,25 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
             List<myStudent> enter_identity_other_Student_list = new List<myStudent>();
             enter_identity_other_Student_list = filter.getListByTagId(enter_identity_Other_list, summary);
 
-            // 因為row 多加10個，往後加
 
-            cs[35, 6].PutValue(enter_identity_normal_Student_list.Count); //入學身份:一般生(非外加錄取)總數
-            cs[36, 6].PutValue(enter_identity_aboriginal_Student_list.Count); //入學身份:一般生(非外加錄取)總數
-            cs[37, 6].PutValue(enter_identity_IEP_Student_list.Count); //入學身份:一般生(非外加錄取)總數
-            cs[38, 6].PutValue(enter_identity_other_Student_list.Count); //入學身份:一般生(非外加錄取)總數
+            cs[25, 6].PutValue(enter_identity_normal_Student_list.Count); //入學身份:一般生(非外加錄取)總數
+            cs[26, 6].PutValue(enter_identity_aboriginal_Student_list.Count); //入學身份:一般生(非外加錄取)總數
+            cs[27, 6].PutValue(enter_identity_IEP_Student_list.Count); //入學身份:一般生(非外加錄取)總數
+            cs[28, 6].PutValue(enter_identity_other_Student_list.Count); //入學身份:一般生(非外加錄取)總數
 
 
-            cs[35, 7].PutValue(filter.getGenderCount(enter_identity_normal_Student_list, "1")); //入學身份:一般生(非外加錄取) 男生總數
-            cs[35, 8].PutValue(filter.getGenderCount(enter_identity_normal_Student_list, "0")); //入學身份:一般生(非外加錄取) 女生總數
+            cs[25, 7].PutValue(filter.getGenderCount(enter_identity_normal_Student_list, "1")); //入學身份:一般生(非外加錄取) 男生總數
+            cs[25, 8].PutValue(filter.getGenderCount(enter_identity_normal_Student_list, "0")); //入學身份:一般生(非外加錄取) 女生總數
 
-            cs[36, 7].PutValue(filter.getGenderCount(enter_identity_aboriginal_Student_list, "1")); // 入學身份:外加錄取--原住民生 男生總數
-            cs[36, 8].PutValue(filter.getGenderCount(enter_identity_aboriginal_Student_list, "0")); // 入學身份:外加錄取--原住民生 女生總數
+            cs[26, 7].PutValue(filter.getGenderCount(enter_identity_aboriginal_Student_list, "1")); // 入學身份:外加錄取--原住民生 男生總數
+            cs[26, 8].PutValue(filter.getGenderCount(enter_identity_aboriginal_Student_list, "0")); // 入學身份:外加錄取--原住民生 女生總數
 
-            cs[37, 7].PutValue(filter.getGenderCount(enter_identity_IEP_Student_list, "1")); //入學身份:外加錄取--身心障礙生 男生總數
-            cs[37, 8].PutValue(filter.getGenderCount(enter_identity_IEP_Student_list, "0")); //入學身份:外加錄取--身心障礙生 女生總數
+            cs[27, 7].PutValue(filter.getGenderCount(enter_identity_IEP_Student_list, "1")); //入學身份:外加錄取--身心障礙生 男生總數
+            cs[27, 8].PutValue(filter.getGenderCount(enter_identity_IEP_Student_list, "0")); //入學身份:外加錄取--身心障礙生 女生總數
 
-            cs[38, 7].PutValue(filter.getGenderCount(enter_identity_other_Student_list, "1")); //入學身份:外加錄取--其他 男生總數
-            cs[38, 8].PutValue(filter.getGenderCount(enter_identity_other_Student_list, "0")); //入學身份:外加錄取--其他 女生總數
+            cs[28, 7].PutValue(filter.getGenderCount(enter_identity_other_Student_list, "1")); //入學身份:外加錄取--其他 男生總數
+            cs[28, 8].PutValue(filter.getGenderCount(enter_identity_other_Student_list, "0")); //入學身份:外加錄取--其他 女生總數
+
 
             col = 9;
 
@@ -1388,20 +1338,19 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
 
                 EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list = filter.getListByTagId(EnterWaysTagID, enter_identity_other_Student_list);
 
-                // 因為row多加10個往後加
 
-                cs[35, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_normal_Student_list, "1")); //入學身份:一般生(非外加錄取) 男生總數 in EnterWayTagsID_Mapping_List
-                cs[35, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_normal_Student_list, "0")); //入學身份:一般生(非外加錄取) 女生總數 in EnterWayTagsID_Mapping_List
 
-                cs[36, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_aboriginal_Student_list, "1")); //入學身份:外加錄取--原住民生 男生總數 in EnterWayTagsID_Mapping_List
-                cs[36, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_aboriginal_Student_list, "0")); //入學身份:外加錄取--原住民生 女生總數 in EnterWayTagsID_Mapping_List
+                cs[25, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_normal_Student_list, "1")); //入學身份:一般生(非外加錄取) 男生總數 in EnterWayTagsID_Mapping_List
+                cs[25, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_normal_Student_list, "0")); //入學身份:一般生(非外加錄取) 女生總數 in EnterWayTagsID_Mapping_List
 
-                cs[37, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_IEP_Student_list, "1")); //入學身份:外加錄取--身心障礙生 男生總數 in EnterWayTagsID_Mapping_List
-                cs[37, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_IEP_Student_list, "0")); //入學身份:外加錄取--身心障礙生 女生總數 in EnterWayTagsID_Mapping_List
+                cs[26, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_aboriginal_Student_list, "1")); //入學身份:外加錄取--原住民生 男生總數 in EnterWayTagsID_Mapping_List
+                cs[26, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_aboriginal_Student_list, "0")); //入學身份:外加錄取--原住民生 女生總數 in EnterWayTagsID_Mapping_List
 
-                cs[38, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "1")); //入學身份:外加錄取--其他 男生總數 in EnterWayTagsID_Mapping_List
-                cs[38, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "0")); //入學身份:外加錄取--其他 女生總數 in EnterWayTagsID_Mapping_List
+                cs[27, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_IEP_Student_list, "1")); //入學身份:外加錄取--身心障礙生 男生總數 in EnterWayTagsID_Mapping_List
+                cs[27, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_IEP_Student_list, "0")); //入學身份:外加錄取--身心障礙生 女生總數 in EnterWayTagsID_Mapping_List
 
+                cs[28, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "1")); //入學身份:外加錄取--其他 男生總數 in EnterWayTagsID_Mapping_List
+                cs[28, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "0")); //入學身份:外加錄取--其他 女生總數 in EnterWayTagsID_Mapping_List
 
 
 
@@ -1412,7 +1361,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 }
                 else
                 {
-                    if (col == 44)
+                    if (col == 36)
                     {
                         col = col + 3;
                         flexInsex = 1;
@@ -1580,18 +1529,18 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
             }
 
 
-            cs[39, 6].PutValue(collect__LastGrade.Count); //應屆畢業總數
-            cs[40, 6].PutValue(collect__LastComplete.Count); //應屆修業總數
-            cs[41, 6].PutValue(collect__LastOther.Count); //其他種入學
+            cs[29, 6].PutValue(collect__LastGrade.Count); //應屆畢業總數
+            cs[30, 6].PutValue(collect__LastComplete.Count); //應屆修業總數
+            cs[31, 6].PutValue(collect__LastOther.Count); //其他種入學
 
-            cs[39, 7].PutValue(filter.getGenderCount(collect__LastGrade, "1")); //應屆畢業男生總數
-            cs[39, 8].PutValue(filter.getGenderCount(collect__LastGrade, "0")); //應屆畢業女生總數
+            cs[29, 7].PutValue(filter.getGenderCount(collect__LastGrade, "1")); //應屆畢業男生總數
+            cs[29, 8].PutValue(filter.getGenderCount(collect__LastGrade, "0")); //應屆畢業女生總數
 
-            cs[40, 7].PutValue(filter.getGenderCount(collect__LastComplete, "1")); //應屆結業男生總數
-            cs[40, 8].PutValue(filter.getGenderCount(collect__LastComplete, "0")); //應屆結業女生總數
+            cs[30, 7].PutValue(filter.getGenderCount(collect__LastComplete, "1")); //應屆結業男生總數
+            cs[30, 8].PutValue(filter.getGenderCount(collect__LastComplete, "0")); //應屆結業女生總數
 
-            cs[41, 7].PutValue(filter.getGenderCount(collect__LastOther, "1")); //其他種入學男生總數
-            cs[41, 8].PutValue(filter.getGenderCount(collect__LastOther, "0")); //其他種入學女生總數
+            cs[31, 7].PutValue(filter.getGenderCount(collect__LastOther, "1")); //其他種入學男生總數
+            cs[31, 8].PutValue(filter.getGenderCount(collect__LastOther, "0")); //其他種入學女生總數
 
 
 
@@ -1613,14 +1562,14 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
 
                 EnterWaysTagID_Mapping_StudentList_collect__collect__LastOther = filter.getListByTagId(EnterWaysTagID, collect__LastOther);
 
-                cs[39, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastGrade, "1")); //應屆畢業男生總數 in EnterWayTagsID_Mapping_List
-                cs[39, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastGrade, "0")); //應屆畢業女生總數 in EnterWayTagsID_Mapping_List
+                cs[29, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastGrade, "1")); //應屆畢業男生總數 in EnterWayTagsID_Mapping_List
+                cs[29, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastGrade, "0")); //應屆畢業女生總數 in EnterWayTagsID_Mapping_List
 
-                cs[40, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastComplete, "1")); //應屆結業男生總數 in EnterWayTagsID_Mapping_List
-                cs[40, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastComplete, "0")); //應屆結業女生總數 in EnterWayTagsID_Mapping_List
+                cs[30, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastComplete, "1")); //應屆結業男生總數 in EnterWayTagsID_Mapping_List
+                cs[30, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastComplete, "0")); //應屆結業女生總數 in EnterWayTagsID_Mapping_List
 
-                cs[41, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__collect__LastOther, "1")); //其他種入學男生總數 in EnterWayTagsID_Mapping_List
-                cs[41, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__collect__LastOther, "0")); //其他種入學女生總數 in EnterWayTagsID_Mapping_List
+                cs[31, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__collect__LastOther, "1")); //其他種入學男生總數 in EnterWayTagsID_Mapping_List
+                cs[31, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__collect__LastOther, "0")); //其他種入學女生總數 in EnterWayTagsID_Mapping_List
 
                 if (col == 9)
                 {
@@ -1629,7 +1578,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 }
                 else
                 {
-                    if (col == 44)
+                    if (col == 36)
                     {
                         col = col + 3;
                         flexInsex = 1;
@@ -1641,18 +1590,18 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 }
             }
 
-            cs[48, 6].PutValue(collect__abo_LastGrade.Count); //新生具有原住民身分者應屆畢業總數
-            cs[49, 6].PutValue(collect__abo_LastComplete.Count); //新生具有原住民身分者應屆修業總數
-            cs[50, 6].PutValue(collect__abo_LastOther.Count); //新生具有原住民身分者其他種入學
+            cs[38, 6].PutValue(collect__abo_LastGrade.Count); //新生具有原住民身分者應屆畢業總數
+            cs[39, 6].PutValue(collect__abo_LastComplete.Count); //新生具有原住民身分者應屆修業總數
+            cs[40, 6].PutValue(collect__abo_LastOther.Count); //新生具有原住民身分者其他種入學
 
-            cs[48, 7].PutValue(filter.getGenderCount(collect__abo_LastGrade, "1")); //新生具有原住民身分者應屆畢業男生總數
-            cs[48, 8].PutValue(filter.getGenderCount(collect__abo_LastGrade, "0")); //新生具有原住民身分者應屆畢業女生總數
+            cs[38, 7].PutValue(filter.getGenderCount(collect__abo_LastGrade, "1")); //新生具有原住民身分者應屆畢業男生總數
+            cs[38, 8].PutValue(filter.getGenderCount(collect__abo_LastGrade, "0")); //新生具有原住民身分者應屆畢業女生總數
 
-            cs[49, 7].PutValue(filter.getGenderCount(collect__abo_LastComplete, "1")); //新生具有原住民身分者應屆結業男生總數
-            cs[49, 8].PutValue(filter.getGenderCount(collect__abo_LastComplete, "0")); //新生具有原住民身分者應屆結業女生總數
+            cs[39, 7].PutValue(filter.getGenderCount(collect__abo_LastComplete, "1")); //新生具有原住民身分者應屆結業男生總數
+            cs[39, 8].PutValue(filter.getGenderCount(collect__abo_LastComplete, "0")); //新生具有原住民身分者應屆結業女生總數
 
-            cs[50, 7].PutValue(filter.getGenderCount(collect__abo_LastOther, "1")); //新生具有原住民身分者其他種入學男生總數
-            cs[50, 8].PutValue(filter.getGenderCount(collect__abo_LastOther, "0")); //新生具有原住民身分者其他種入學女生總數
+            cs[40, 7].PutValue(filter.getGenderCount(collect__abo_LastOther, "1")); //新生具有原住民身分者其他種入學男生總數
+            cs[40, 8].PutValue(filter.getGenderCount(collect__abo_LastOther, "0")); //新生具有原住民身分者其他種入學女生總數
 
 
 
@@ -1788,14 +1737,14 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 }
             }
 
-            cs[42, 6].PutValue(collect__LocalCounty.Count); //戶籍位於本縣市
-            cs[43, 6].PutValue(collect__OtherCounty.Count); //戶籍非位於本縣市
+            cs[32, 6].PutValue(collect__LocalCounty.Count); //戶籍位於本縣市
+            cs[33, 6].PutValue(collect__OtherCounty.Count); //戶籍非位於本縣市
 
-            cs[42, 7].PutValue(filter.getGenderCount(collect__LocalCounty, "1")); //戶籍位於本縣市男生總數
-            cs[42, 8].PutValue(filter.getGenderCount(collect__LocalCounty, "0")); //戶籍位於本縣市女生總數
+            cs[32, 7].PutValue(filter.getGenderCount(collect__LocalCounty, "1")); //戶籍位於本縣市男生總數
+            cs[32, 8].PutValue(filter.getGenderCount(collect__LocalCounty, "0")); //戶籍位於本縣市女生總數
 
-            cs[43, 7].PutValue(filter.getGenderCount(collect__OtherCounty, "1")); //戶籍非位於本縣市男生總數
-            cs[43, 8].PutValue(filter.getGenderCount(collect__OtherCounty, "0")); //戶籍非位於本縣市女生總數 
+            cs[33, 7].PutValue(filter.getGenderCount(collect__OtherCounty, "1")); //戶籍非位於本縣市男生總數
+            cs[33, 8].PutValue(filter.getGenderCount(collect__OtherCounty, "0")); //戶籍非位於本縣市女生總數 
 
             col = 9;
 
@@ -1811,11 +1760,11 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
 
                 EnterWaysTagID_Mapping_StudentList_OtherCounty = filter.getListByTagId(EnterWaysTagID, collect__OtherCounty);
 
-                cs[42, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_LocalCounty, "1")); //戶籍位於本縣市男生總數 in EnterWayTagsID_Mapping_List
-                cs[42, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_LocalCounty, "0")); //戶籍位於本縣市女生總數 in EnterWayTagsID_Mapping_List
+                cs[32, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_LocalCounty, "1")); //戶籍位於本縣市男生總數 in EnterWayTagsID_Mapping_List
+                cs[32, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_LocalCounty, "0")); //戶籍位於本縣市女生總數 in EnterWayTagsID_Mapping_List
 
-                cs[43, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_OtherCounty, "1")); //戶籍非位於本縣市男生總數 in EnterWayTagsID_Mapping_List
-                cs[43, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_OtherCounty, "0")); //戶籍非位於本縣市女生總數 in EnterWayTagsID_Mapping_List
+                cs[33, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_OtherCounty, "1")); //戶籍非位於本縣市男生總數 in EnterWayTagsID_Mapping_List
+                cs[33, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_OtherCounty, "0")); //戶籍非位於本縣市女生總數 in EnterWayTagsID_Mapping_List
 
                 if (col == 9)
                 {
@@ -1824,7 +1773,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 }
                 else
                 {
-                    if (col == 44)
+                    if (col == 36)
                     {
                         col = col + 3;
                         flexInsex = 1;
@@ -1990,78 +1939,78 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
             #endregion
 
             #region 填值
-            cs[45, 6].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["總計"], "1")); // 總計 男
-            cs[46, 6].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["總計"], "0")); // 總計 女
 
-            cs[45, 7].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新北市"], "1")); // 新北市 男
-            cs[46, 7].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新北市"], "0")); // 新北市 女
+            cs[35, 6].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["總計"], "1")); // 總計 男
+            cs[36, 6].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["總計"], "0")); // 總計 女
 
-            cs[45, 8].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺北市"], "1")); // 臺北市 男
-            cs[46, 8].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺北市"], "0")); // 臺北市 女
+            cs[35, 7].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新北市"], "1")); // 新北市 男
+            cs[36, 7].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新北市"], "0")); // 新北市 女
 
-            cs[45, 9].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺中市"], "1")); // 臺中市 男
-            cs[46, 9].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺中市"], "0")); // 臺中市 女
+            cs[35, 8].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺北市"], "1")); // 臺北市 男
+            cs[36, 8].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺北市"], "0")); // 臺北市 女
 
-            cs[45, 10].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺南市"], "1")); // 臺南市 男
-            cs[46, 10].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺南市"], "0")); // 臺南市 女
+            cs[35, 9].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺中市"], "1")); // 臺中市 男
+            cs[36, 9].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺中市"], "0")); // 臺中市 女
 
-            cs[45, 12].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["高雄市"], "1")); // 高雄市 男
-            cs[46, 12].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["高雄市"], "0")); // 高雄市 女
+            cs[35, 10].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺南市"], "1")); // 臺南市 男
+            cs[36, 10].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺南市"], "0")); // 臺南市 女
 
-            cs[45, 14].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["宜蘭縣"], "1")); // 宜蘭縣 男
-            cs[46, 14].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["宜蘭縣"], "0")); // 宜蘭縣 女
+            cs[35, 12].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["高雄市"], "1")); // 高雄市 男
+            cs[36, 12].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["高雄市"], "0")); // 高雄市 女
 
-            cs[45, 16].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["桃園市"], "1")); // 桃園市 男
-            cs[46, 16].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["桃園市"], "0")); // 桃園市 女
+            cs[35, 14].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["宜蘭縣"], "1")); // 宜蘭縣 男
+            cs[36, 14].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["宜蘭縣"], "0")); // 宜蘭縣 女
 
-            cs[45, 18].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹縣"], "1")); // 新竹縣 男
-            cs[46, 18].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹縣"], "0")); // 新竹縣 女
+            cs[35, 16].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["桃園市"], "1")); // 桃園市 男
+            cs[36, 16].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["桃園市"], "0")); // 桃園市 女
 
-            cs[45, 20].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["苗栗縣"], "1")); // 苗栗縣 男
-            cs[46, 20].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["苗栗縣"], "0")); // 苗栗縣 女
+            cs[35, 18].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹縣"], "1")); // 新竹縣 男
+            cs[36, 18].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹縣"], "0")); // 新竹縣 女
 
-            cs[45, 22].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["彰化縣"], "1")); // 彰化縣 男
-            cs[46, 22].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["彰化縣"], "0")); // 彰化縣 女
+            cs[35, 20].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["苗栗縣"], "1")); // 苗栗縣 男
+            cs[36, 20].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["苗栗縣"], "0")); // 苗栗縣 女
 
-            cs[45, 24].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["南投縣"], "1")); // 南投縣 男
-            cs[46, 24].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["南投縣"], "0")); // 南投縣 女
+            cs[35, 22].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["彰化縣"], "1")); // 彰化縣 男
+            cs[36, 22].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["彰化縣"], "0")); // 彰化縣 女
 
-            cs[45, 26].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["雲林縣"], "1")); // 雲林縣 男
-            cs[46, 26].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["雲林縣"], "0")); // 雲林縣 女
+            cs[35, 24].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["南投縣"], "1")); // 南投縣 男
+            cs[36, 24].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["南投縣"], "0")); // 南投縣 女
 
-            cs[45, 28].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義縣"], "1")); // 嘉義縣 男
-            cs[46, 28].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義縣"], "0")); // 嘉義縣 女
+            cs[35, 26].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["雲林縣"], "1")); // 雲林縣 男
+            cs[36, 26].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["雲林縣"], "0")); // 雲林縣 女
 
-            cs[45, 30].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["屏東縣"], "1")); // 屏東縣 男
-            cs[46, 30].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["屏東縣"], "0")); // 屏東縣 女
+            cs[35, 28].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義縣"], "1")); // 嘉義縣 男
+            cs[36, 28].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義縣"], "0")); // 嘉義縣 女
 
-            cs[45, 32].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺東縣"], "1")); // 臺東縣 男
-            cs[46, 32].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺東縣"], "0")); // 臺東縣 女
+            cs[35, 30].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["屏東縣"], "1")); // 屏東縣 男
+            cs[36, 30].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["屏東縣"], "0")); // 屏東縣 女
 
-            cs[45, 34].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["花蓮縣"], "1")); // 花蓮縣 男
-            cs[46, 34].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["花蓮縣"], "0")); // 花蓮縣 女
+            cs[35, 32].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺東縣"], "1")); // 臺東縣 男
+            cs[36, 32].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺東縣"], "0")); // 臺東縣 女
 
-            cs[45, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["澎湖縣"], "1")); // 澎湖縣 男
-            cs[46, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["澎湖縣"], "0")); // 澎湖縣 女
+            cs[35, 34].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["花蓮縣"], "1")); // 花蓮縣 男
+            cs[36, 34].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["花蓮縣"], "0")); // 花蓮縣 女
 
-            cs[45, 38].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["基隆市"], "1")); // 基隆市 男
-            cs[46, 38].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["基隆市"], "0")); // 基隆市 女
+            cs[35, 36].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["澎湖縣"], "1")); // 澎湖縣 男
+            cs[36, 36].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["澎湖縣"], "0")); // 澎湖縣 女
 
-            cs[45, 39].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹市"], "1")); // 新竹市 男
-            cs[46, 39].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹市"], "0")); // 新竹市 女
+            cs[35, 38].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["基隆市"], "1")); // 基隆市 男
+            cs[36, 38].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["基隆市"], "0")); // 基隆市 女
 
-            cs[45, 40].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義市"], "1")); // 嘉義市 男
-            cs[46, 40].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義市"], "0")); // 嘉義市 女
+            cs[35, 39].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹市"], "1")); // 新竹市 男
+            cs[36, 39].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹市"], "0")); // 新竹市 女
 
-            cs[45, 42].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["金門縣"], "1")); // 金門縣 男
-            cs[46, 42].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["金門縣"], "0")); // 金門縣 女
+            cs[35, 40].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義市"], "1")); // 嘉義市 男
+            cs[36, 40].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義市"], "0")); // 嘉義市 女
 
-            cs[45, 44].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["連江縣"], "1")); // 連江縣 男
-            cs[46, 44].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["連江縣"], "0")); // 連江縣 女
+            cs[35, 42].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["金門縣"], "1")); // 金門縣 男
+            cs[36, 42].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["金門縣"], "0")); // 金門縣 女
 
-            cs[45, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["其他"], "1")); // 其他 男
-            cs[46, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["其他"], "0")); // 其他 女  
+            cs[35, 44].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["連江縣"], "1")); // 連江縣 男
+            cs[36, 44].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["連江縣"], "0")); // 連江縣 女
 
+            cs[35, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["其他"], "1")); // 其他 男
+            cs[36, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["其他"], "0")); // 其他 女  
             #endregion
 
             #endregion
