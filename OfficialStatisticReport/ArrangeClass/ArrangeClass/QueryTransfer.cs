@@ -129,5 +129,39 @@ ORDER BY
             return successed;
         }
 
+        // 取得 教務作業>批次作業/檢視>異動作業>核班人數維護 資料內容
+        public static Dictionary<string, string> GetClassTyepUDict(string SchoolYear)
+        {
+            Dictionary<string, string> value = new Dictionary<string, string>();
+
+            try
+            {
+                QueryHelper qh = new QueryHelper();
+                string query = string.Format(@"
+                SELECT
+                    class_type,
+                    class_typeu
+                FROM
+                    $campus.updaterecord.govapprovednumofclass
+                WHERE
+                    schoolyear = {0}
+                ", SchoolYear);
+
+                DataTable dt = qh.Select(query);
+                foreach(DataRow dr in dt.Rows)
+                {
+                    string classType = dr["class_type"] + "";
+                    if (!value.ContainsKey(classType))
+                        value.Add(classType, dr["class_typeu"] + "");
+                }                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("取得核班人數維護錯誤," + ex.Message);
+            }
+
+            return value;
+        }
+
     }
 }

@@ -43,6 +43,9 @@ namespace ArrangeClass
 
         private void btnExport_Click(object sender, EventArgs e)
         {
+
+            btnExport.Enabled = false;
+            
             //儲存設定檔
             // 建立 XmlDocument 物件
             XmlDocument xmlDoc = new XmlDocument();
@@ -91,11 +94,13 @@ namespace ArrangeClass
             if (!QueryTransfer.SaveConfigure(xmlString))
             {
                 MsgBox.Show("編班名冊設定檔儲存失敗。");
+                btnExport.Enabled = true;
                 return;
             }
 
             Printer printer = new Printer();
             printer.Start();
+            btnExport.Enabled = true;
         }
     }
 }

@@ -31,7 +31,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Aspose.Cells_201402">
+    <Reference Include="Aspose.Cells_201402, Version=7.7.1.0, Culture=neutral, PublicKeyToken=716fcc553a201e56, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\Aspose.Cells_201402.dll</HintPath>
       <Private>False</Private>
     </Reference>
@@ -40,32 +41,34 @@
       <HintPath>Library\DevComponents.DotNetBar2.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="FISCA">
+    <Reference Include="FISCA, Version=2.6.0.12, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="FISCA.Data">
+    <Reference Include="FISCA.Data, Version=1.0.0.3, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.Data.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="FISCA.Permission">
+    <Reference Include="FISCA.Permission, Version=1.2.1.8, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.Permission.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="FISCA.Presentation">
+    <Reference Include="FISCA.Presentation, Version=1.1.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.Presentation.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="FISCA.UDT">
+    <Reference Include="FISCA.UDT, Version=1.0.2.2, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\FISCA.UDT.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="K12.Data">
+    <Reference Include="K12.Data, Version=2.0.0.16, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>Library\K12.Data.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="K12.Presentation">
-      <HintPath>Library\K12.Presentation.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SHSchool.Data">
@@ -100,9 +103,7 @@
     </Compile>
     <Compile Include="QueryTransfer.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Library\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="PrintForm.resx">
       <DependentUpon>PrintForm.cs</DependentUpon>
@@ -116,6 +117,30 @@
     <None Include="Resources\編班名冊欄位範例20171114%28樣板%29.xls" />
     <None Include="Resources\編班名冊欄位說明20171114.odt" />
     <None Include="Resources\編班名冊說明與教學20171122.odt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Library\Aspose.Cells_201402.dll" />
+    <Content Include="Library\Aspose.Cells_201402.xml" />
+    <Content Include="Library\DevComponents.DotNetBar2.dll" />
+    <Content Include="Library\DevComponents.DotNetBar2.xml" />
+    <Content Include="Library\FISCA.Data.dll" />
+    <Content Include="Library\FISCA.Data.pdb" />
+    <Content Include="Library\FISCA.Data.xml" />
+    <Content Include="Library\FISCA.dll" />
+    <Content Include="Library\FISCA.Permission.dll" />
+    <Content Include="Library\FISCA.Permission.pdb" />
+    <Content Include="Library\FISCA.Permission.xml" />
+    <Content Include="Library\FISCA.Presentation.dll" />
+    <Content Include="Library\FISCA.Presentation.pdb" />
+    <Content Include="Library\FISCA.UDT.dll" />
+    <Content Include="Library\FISCA.UDT.pdb" />
+    <Content Include="Library\FISCA.UDT.xml" />
+    <Content Include="Library\K12.Data.dll" />
+    <Content Include="Library\K12.Data.pdb" />
+    <Content Include="Library\K12.Data.xml" />
+    <Content Include="Library\SHSchool.Data.dll" />
+    <Content Include="Library\SHSchool.Data.pdb" />
+    <Content Include="Library\SHSchool.Data.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

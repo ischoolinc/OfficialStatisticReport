@@ -59,6 +59,7 @@ namespace ArrangeClass
             //重啟按鈕功能
             item1["報表"]["編班名冊"].Enable = true;
 
+
             FISCA.Presentation.MotherForm.SetStatusBarMessage("產生 編班名冊 已完成");
             SaveFileDialog sd = new System.Windows.Forms.SaveFileDialog();
             sd.Title = "另存新檔";
@@ -201,6 +202,14 @@ namespace ArrangeClass
             updateTypeDict.Add("05", "g");
             updateTypeDict.Add("06", "g");
 
+            // 取得 教務作業>批次作業/檢視>異動作業>核班人數維護 資料內容，加入使用者設定
+            Dictionary<string, string> ClasssTypeU = QueryTransfer.GetClassTyepUDict(K12.Data.School.DefaultSchoolYear);
+            foreach (string key in ClasssTypeU.Keys)
+            {
+                if (!updateTypeDict.ContainsKey(key))
+                    updateTypeDict.Add(key, ClasssTypeU[key]);
+            }
+
             _BGWClassStudentAbsenceDetail.ReportProgress(50);
 
             #region 報表填值
@@ -215,23 +224,92 @@ namespace ArrangeClass
                 updateType = "";
                 errorReason = "";
 
-                //班別資訊 記載在  異動更新資料 SHUpdateRecordRecord，以下處理將會抓取最新那筆異動的班別資料
+                ////班別資訊 記載在  異動更新資料 SHUpdateRecordRecord，以下處理將會抓取最新那筆異動的班別資料
+                //if (updateDict.ContainsKey(sr.ID))
+                //{
+                //    DateTime dt = new DateTime();
+
+                //    foreach (SHUpdateRecordRecord srr in updateDict[sr.ID])
+                //    {
+
+
+                //        if (srr.ADDate != "")
+                //        {
+                //            if (DateTime.Parse(srr.ADDate) > dt)
+                //            {
+                //                dt = DateTime.Parse(srr.ADDate);
+
+                //                classCode = srr.ClassType;
+                //            }
+                //        }
+                //    }
+                //}
+
+                // 最後一筆異動
+                SHUpdateRecordRecord lastUpdateRec = null;
+
+                // 班別取得規則異動最後一筆有核准日期或臨編日期
+
                 if (updateDict.ContainsKey(sr.ID))
                 {
-                    DateTime dt = new DateTime();
-
+                    // 有核准日期或臨編日期放入
                     foreach (SHUpdateRecordRecord srr in updateDict[sr.ID])
                     {
+                        // 處理核准日期
                         if (srr.ADDate != "")
                         {
-                            if (DateTime.Parse(srr.ADDate) > dt)
+                            DateTime d1;
+                            if (DateTime.TryParse(srr.ADDate, out d1))
                             {
-                                dt = DateTime.Parse(srr.ADDate);
-
-                                classCode = srr.ClassType;
+                                if (lastUpdateRec == null)
+                                {
+                                    lastUpdateRec = srr;
+                                }
+                                else
+                                {
+                                    DateTime d2;
+                                    if (DateTime.TryParse(lastUpdateRec.ADDate, out d2))
+                                    {
+                                        if (d1 > d2)
+                                        {
+                                            lastUpdateRec = srr;
+                                        }
+                                    }
+                                }
                             }
                         }
+
+                        // 處理臨編日期
+                        if (srr.TempDate != "")
+                        {
+                            DateTime d1;
+                            if (DateTime.TryParse(srr.TempDate, out d1))
+                            {
+                                if (lastUpdateRec == null)
+                                {
+                                    lastUpdateRec = srr;
+                                }
+                                else
+                                {
+                                    DateTime d2;
+                                    if (DateTime.TryParse(lastUpdateRec.TempDate, out d2))
+                                    {
+                                        if (d1 > d2)
+                                        {
+                                            lastUpdateRec = srr;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                     }
+                }
+
+                // 最後一筆
+                if (lastUpdateRec != null)
+                {
+                    classCode = lastUpdateRec.ClassType;
                 }
 
                 if (classCode == "")
