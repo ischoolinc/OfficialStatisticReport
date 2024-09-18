@@ -1,4 +1,5 @@
-﻿using FISCA.Data;
+﻿using ArrangeClass.DAO;
+using FISCA.Data;
 using K12.Data;
 using System;
 using System.Collections.Generic;
@@ -148,16 +149,109 @@ ORDER BY
                 ", SchoolYear);
 
                 DataTable dt = qh.Select(query);
-                foreach(DataRow dr in dt.Rows)
+                foreach (DataRow dr in dt.Rows)
                 {
                     string classType = dr["class_type"] + "";
                     if (!value.ContainsKey(classType))
                         value.Add(classType, dr["class_typeu"] + "");
-                }                
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine("取得核班人數維護錯誤," + ex.Message);
+            }
+
+            return value;
+        }
+
+        // 科別名稱與科別代碼對照
+        public static Dictionary<string, string> GetDeptNameCodeDict()
+        {
+            Dictionary<string, string> value = new Dictionary<string, string>();
+            try
+            {
+                QueryHelper qh = new QueryHelper();
+                string query = string.Format(@"
+                SELECT
+                    name,
+                    code
+                FROM
+                    dept
+                ORDER BY
+                    code;
+                ");
+
+                DataTable dt = qh.Select(query);
+                foreach (DataRow dr in dt.Rows)
+                {
+                    string name = dr["name"] + "";
+                    if (!value.ContainsKey(name))
+                        value.Add(name, dr["code"] + "");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return value;
+        }
+
+        // 透過學生ID取得學生學期對照內容
+        public static Dictionary<string, List<SemsHistoryInfo>> GetSemsHistoryInfoByIDs(List<string> StudentIDs)
+        {
+            Dictionary<string, List<SemsHistoryInfo>> value = new Dictionary<string, List<SemsHistoryInfo>>();
+
+            try
+            {
+                QueryHelper qh = new QueryHelper();
+                string query = string.Format(@"
+                SELECT
+                    history.id,
+                    (
+                        '0' || array_to_string(xpath('//History/@SchoolYear', history_xml), '') :: text
+                    ) :: integer AS school_year,
+                    (
+                        '0' || array_to_string(xpath('//History/@Semester', history_xml), '') :: text
+                    ) :: integer AS semester,
+                    (
+                        '0' || array_to_string(xpath('//History/@GradeYear', history_xml), '') :: text
+                    ) :: integer AS grade_year,
+                    array_to_string(xpath('//History/@ClassName', history_xml), '') :: text AS class_name,    
+                    array_to_string(xpath('//History/@SeatNo', history_xml), '') :: text AS seat_no    
+                FROM
+                    (
+                        SELECT
+                            id,
+                            unnest(
+                                xpath(
+                                    '//root/History',
+                                    xmlparse(content '<root>' || sems_history || '</root>')
+                                )
+                            ) AS history_xml
+                        FROM
+                            student WHERE id IN({0})
+                    ) AS history
+                ", string.Join(",", StudentIDs.ToArray()));
+
+                DataTable dt = qh.Select(query);
+                foreach (DataRow dr in dt.Rows)
+                {
+                    string id = dr["id"] + "";
+                    if (!value.ContainsKey(id))
+                        value.Add(id, new List<SemsHistoryInfo>());
+
+                    SemsHistoryInfo sh = new SemsHistoryInfo();
+                    sh.SchoolYear = dr["school_year"] + "";
+                    sh.Semester = dr["semester"] + "";
+                    sh.GradeYear = dr["grade_year"] + "";
+                    sh.ClassName = dr["class_name"] + "";
+                    sh.SeatNo = dr["seat_no"] + "";
+                    value[id].Add(sh);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
 
             return value;

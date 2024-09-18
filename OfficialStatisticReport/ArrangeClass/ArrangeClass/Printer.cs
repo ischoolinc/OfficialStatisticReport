@@ -12,6 +12,7 @@ using SHSchool.Data;
 using Aspose.Cells;
 using System.IO;
 using FISCA.Data;
+using ArrangeClass.DAO;
 
 namespace ArrangeClass
 {
@@ -166,9 +167,13 @@ namespace ArrangeClass
 
             _BGWClassStudentAbsenceDetail.ReportProgress(40);
 
+            List<string> StudentIDs = new List<string>();
+
             // 整理學生全部異動資料，以利後續對出學生班別
             foreach (SHUpdateRecordRecord srr in updateList)
             {
+                StudentIDs.Add(srr.StudentID);
+
                 if (!updateDict.ContainsKey(srr.StudentID))
                 {
                     updateDict.Add(srr.StudentID, new List<SHUpdateRecordRecord>());
@@ -181,8 +186,15 @@ namespace ArrangeClass
                 }
             }
 
+            // 取得學生學期對照班級學生
+            Dictionary<string, List<SemsHistoryInfo>> StudSemsHisDict = QueryTransfer.GetSemsHistoryInfoByIDs(StudentIDs);
+
+
             // 上傳類別的對應 Dictionary ，使用班別來對照
             Dictionary<string, string> updateTypeDict = new Dictionary<string, string>();
+
+            // 科別名稱與代碼對照
+            Dictionary<string, string> deptNameCodeDict = QueryTransfer.GetDeptNameCodeDict();
 
             //日間部
             updateTypeDict.Add("1", "a");
@@ -223,33 +235,11 @@ namespace ArrangeClass
                 departmentCode = "";
                 updateType = "";
                 errorReason = "";
-
-                ////班別資訊 記載在  異動更新資料 SHUpdateRecordRecord，以下處理將會抓取最新那筆異動的班別資料
-                //if (updateDict.ContainsKey(sr.ID))
-                //{
-                //    DateTime dt = new DateTime();
-
-                //    foreach (SHUpdateRecordRecord srr in updateDict[sr.ID])
-                //    {
-
-
-                //        if (srr.ADDate != "")
-                //        {
-                //            if (DateTime.Parse(srr.ADDate) > dt)
-                //            {
-                //                dt = DateTime.Parse(srr.ADDate);
-
-                //                classCode = srr.ClassType;
-                //            }
-                //        }
-                //    }
-                //}
-
+                
                 // 最後一筆異動
                 SHUpdateRecordRecord lastUpdateRec = null;
 
                 // 班別取得規則異動最後一筆有核准日期或臨編日期
-
                 if (updateDict.ContainsKey(sr.ID))
                 {
                     // 有核准日期或臨編日期放入
@@ -310,15 +300,55 @@ namespace ArrangeClass
                 if (lastUpdateRec != null)
                 {
                     classCode = lastUpdateRec.ClassType;
+
+                    // 使用異動的科別名稱反推科別管理找出科別代碼
+                    if (deptNameCodeDict.ContainsKey(lastUpdateRec.Department))
+                        departmentCode = deptNameCodeDict[lastUpdateRec.Department];
+
+                    // 處理學生年級班級，當異動學年度學期與目前學年度學期相同，讀取目前學生班級座號，不相同讀取學期對照
+                    string SY = "", SS = "";
+                    if (lastUpdateRec.SchoolYear.HasValue)
+                        SY = lastUpdateRec.SchoolYear.Value.ToString();
+                    if (lastUpdateRec.Semester.HasValue)
+                        SS = lastUpdateRec.Semester.Value.ToString();
+
+                    // 與預設學年度相同
+                    if (SY == K12.Data.School.DefaultSchoolYear && SS == K12.Data.School.DefaultSemester)
+                    {
+                        if (sr.Class != null)
+                        {
+                            if (sr.Class.GradeYear.HasValue)
+                                grade = sr.Class.GradeYear.Value + "";
+
+                            className = sr.Class.Name;
+
+                            if (sr.SeatNo.HasValue)
+                                seatNo = sr.SeatNo.Value + "";
+                        }
+
+                    }
+                    else
+                    {
+                        if (StudSemsHisDict.ContainsKey(sr.ID))
+                        {
+                            foreach(SemsHistoryInfo sh in StudSemsHisDict[sr.ID])
+                            {
+                                if (sh.SchoolYear == SY && sh.Semester == SS)
+                                {
+                                    grade = sh.GradeYear;
+                                    className = sh.ClassName;
+                                    seatNo = sh.SeatNo;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
 
                 if (classCode == "")
                 {
                     errorReason += "沒有班別資訊，請至學生最新的異動紀錄上新增。";
                 }
-
-                //依照科別ID 去尋找使用者在ischool 系統中設定科別學程代碼
-                departmentCode = getDeptCode(sr.DepartmentID);
 
                 if (departmentCode == "")
                 {
@@ -328,7 +358,6 @@ namespace ArrangeClass
                 //依照班別去對照 上傳類別
                 if (updateTypeDict.ContainsKey(classCode))
                 {
-
                     updateType = updateTypeDict[classCode];
                 }
 
@@ -340,35 +369,26 @@ namespace ArrangeClass
                 if (sr.Status == SHSchool.Data.SHStudentRecord.StudentStatus.一般)
                 {
                     identityType = "1";
-                    grade = sr.Class != null ? sr.Class.GradeYear + "" : "";
-                    className = sr.Class != null ? sr.Class.Name + "" : "";
-                    seatNo = sr.SeatNo + "";
 
                     if (className == "")
                     {
-                        errorReason += "沒有班級名稱，請至學生班級資料上新增。";
+                        errorReason += "沒有班級名稱，請至學生班級資料或學生學期對照上新增。";
                     }
                 }
                 if (sr.Status == SHSchool.Data.SHStudentRecord.StudentStatus.休學)
                 {
                     identityType = "2";
-                    grade = sr.Class != null ? sr.Class.GradeYear + "" : "";
-                    //休學生、延修生 班級名稱、座號 不需要填寫
-                    className = "";
-                    seatNo = "";
+
                 }
                 if (sr.Status == SHSchool.Data.SHStudentRecord.StudentStatus.延修)
                 {
                     identityType = "3";
-                    grade = sr.Class != null ? sr.Class.GradeYear + "" : "";
-                    //休學生、延修生 班級名稱、座號 不需要填寫
-                    className = "";
-                    seatNo = "";
+
                 }
 
                 if (grade == "")
                 {
-                    errorReason += "沒有年級資料，請至學生班級資料上新增。";
+                    errorReason += "沒有年級資料，請至學生班級資料或學生學期對照上新增。";
                 }
 
                 // 將有不完整資料的學生 加入錯誤清單
@@ -459,28 +479,117 @@ namespace ArrangeClass
                 updateType = "";
                 errorReason = "";
 
-                //班別資訊 記載在  異動更新資料 SHUpdateRecordRecord，以下處理將會抓取最新那筆異動的班別資料
+                // 最後一筆異動
+                SHUpdateRecordRecord lastUpdateRec = null;
+
+                // 班別取得規則異動最後一筆有核准日期或臨編日期
                 if (updateDict.ContainsKey(sr.ID))
                 {
-                    DateTime dt = new DateTime();
-
+                    // 有核准日期或臨編日期放入
                     foreach (SHUpdateRecordRecord srr in updateDict[sr.ID])
                     {
+                        // 處理核准日期
                         if (srr.ADDate != "")
                         {
-                            if (DateTime.Parse(srr.ADDate) > dt)
+                            DateTime d1;
+                            if (DateTime.TryParse(srr.ADDate, out d1))
                             {
-                                dt = DateTime.Parse(srr.ADDate);
+                                if (lastUpdateRec == null)
+                                {
+                                    lastUpdateRec = srr;
+                                }
+                                else
+                                {
+                                    DateTime d2;
+                                    if (DateTime.TryParse(lastUpdateRec.ADDate, out d2))
+                                    {
+                                        if (d1 > d2)
+                                        {
+                                            lastUpdateRec = srr;
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
-                                classCode = srr.ClassType;
+                        // 處理臨編日期
+                        if (srr.TempDate != "")
+                        {
+                            DateTime d1;
+                            if (DateTime.TryParse(srr.TempDate, out d1))
+                            {
+                                if (lastUpdateRec == null)
+                                {
+                                    lastUpdateRec = srr;
+                                }
+                                else
+                                {
+                                    DateTime d2;
+                                    if (DateTime.TryParse(lastUpdateRec.TempDate, out d2))
+                                    {
+                                        if (d1 > d2)
+                                        {
+                                            lastUpdateRec = srr;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+                ////依照科別ID 去尋找使用者在ischool 系統中設定科別學程代碼
+                //departmentCode = getDeptCode(sr.DepartmentID);
+
+                // 最後一筆
+                if (lastUpdateRec != null)
+                {
+                    classCode = lastUpdateRec.ClassType;
+
+                    // 使用異動的科別名稱反推科別管理找出科別代碼
+                    if (deptNameCodeDict.ContainsKey(lastUpdateRec.Department))
+                        departmentCode = deptNameCodeDict[lastUpdateRec.Department];
+
+                    // 處理學生年級班級，當異動學年度學期與目前學年度學期相同，讀取目前學生班級座號，不相同讀取學期對照
+                    string SY = "", SS = "";
+                    if (lastUpdateRec.SchoolYear.HasValue)
+                        SY = lastUpdateRec.SchoolYear.Value.ToString();
+                    if (lastUpdateRec.Semester.HasValue)
+                        SS = lastUpdateRec.Semester.Value.ToString();
+
+                    // 與預設學年度相同
+                    if (SY == K12.Data.School.DefaultSchoolYear && SS == K12.Data.School.DefaultSemester)
+                    {
+                        if (sr.Class != null)
+                        {
+                            if (sr.Class.GradeYear.HasValue)
+                                grade = sr.Class.GradeYear.Value + "";
+
+                            className = sr.Class.Name;
+
+                            if (sr.SeatNo.HasValue)
+                                seatNo = sr.SeatNo.Value + "";
+                        }
+
+                    }
+                    else
+                    {
+                        if (StudSemsHisDict.ContainsKey(sr.ID))
+                        {
+                            foreach (SemsHistoryInfo sh in StudSemsHisDict[sr.ID])
+                            {
+                                if (sh.SchoolYear == SY && sh.Semester == SS)
+                                {
+                                    grade = sh.GradeYear;
+                                    className = sh.ClassName;
+                                    seatNo = sh.SeatNo;
+                                    break;
+                                }
                             }
                         }
                     }
                 }
-
-                //依照科別ID 去尋找使用者在ischool 系統中設定科別學程代碼
-                departmentCode = getDeptCode(sr.DepartmentID);
-
 
                 //依照班別去對照 上傳類別
                 if (updateTypeDict.ContainsKey(classCode))
@@ -491,26 +600,15 @@ namespace ArrangeClass
 
                 if (sr.Status == SHSchool.Data.SHStudentRecord.StudentStatus.一般)
                 {
-                    identityType = "1";
-                    grade = sr.Class != null ? sr.Class.GradeYear + "" : "";
-                    className = sr.Class != null ? sr.Class.Name + "" : "";
-                    seatNo = sr.SeatNo + "";
+                    identityType = "1";                  
                 }
                 if (sr.Status == SHSchool.Data.SHStudentRecord.StudentStatus.休學)
                 {
                     identityType = "2";
-                    grade = sr.Class != null ? sr.Class.GradeYear + "" : "";
-                    //休學生、延修生 班級名稱、座號 不需要填寫
-                    className = "";
-                    seatNo = "";
                 }
                 if (sr.Status == SHSchool.Data.SHStudentRecord.StudentStatus.延修)
                 {
-                    identityType = "3";
-                    grade = sr.Class != null ? sr.Class.GradeYear + "" : "";
-                    //休學生、延修生 班級名稱、座號 不需要填寫
-                    className = "";
-                    seatNo = "";
+                    identityType = "3";                    
                 }
 
                 //學校代碼

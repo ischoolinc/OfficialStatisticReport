@@ -86,6 +86,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DAO\SemsHistoryInfo.cs" />
     <Compile Include="Permissions.cs" />
     <Compile Include="Printer.cs" />
     <Compile Include="PrintForm.cs">
