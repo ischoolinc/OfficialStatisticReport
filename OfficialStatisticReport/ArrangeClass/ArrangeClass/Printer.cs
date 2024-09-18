@@ -326,6 +326,24 @@ namespace ArrangeClass
                                 seatNo = sr.SeatNo.Value + "";
                         }
 
+                        // 當班級或年級是空的，在讀取一次學期對照
+                        if (grade == "" || className == "")
+                        {
+                            if (StudSemsHisDict.ContainsKey(sr.ID))
+                            {
+                                foreach (SemsHistoryInfo sh in StudSemsHisDict[sr.ID])
+                                {
+                                    if (sh.SchoolYear == SY && sh.Semester == SS)
+                                    {
+                                        grade = sh.GradeYear;
+                                        className = sh.ClassName;
+                                        seatNo = sh.SeatNo;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
                     }
                     else
                     {
@@ -570,6 +588,25 @@ namespace ArrangeClass
 
                             if (sr.SeatNo.HasValue)
                                 seatNo = sr.SeatNo.Value + "";
+                        }
+
+
+                        // 當班級或年級是空的，在讀取一次學期對照
+                        if (grade == "" || className == "")
+                        {
+                            if (StudSemsHisDict.ContainsKey(sr.ID))
+                            {
+                                foreach (SemsHistoryInfo sh in StudSemsHisDict[sr.ID])
+                                {
+                                    if (sh.SchoolYear == SY && sh.Semester == SS)
+                                    {
+                                        grade = sh.GradeYear;
+                                        className = sh.ClassName;
+                                        seatNo = sh.SeatNo;
+                                        break;
+                                    }
+                                }
+                            }
                         }
 
                     }
