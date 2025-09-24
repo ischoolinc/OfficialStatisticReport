@@ -105,13 +105,15 @@ namespace ArrangeClass
             //學生資料錯誤的原因
             Dictionary<string, string> errorReasonDict = new Dictionary<string, string>();
 
+            List<string> target_StudentIDList = new List<string>();
+
             // 濾出 狀態 為 一般、休學、延修 的學生
             foreach (SHSchool.Data.SHStudentRecord sr in all_StudentList)
             {
                 if (sr.Status == SHSchool.Data.SHStudentRecord.StudentStatus.一般 || sr.Status == SHSchool.Data.SHStudentRecord.StudentStatus.休學 || sr.Status == SHSchool.Data.SHStudentRecord.StudentStatus.延修)
                 {
                     target_StudentList.Add(sr);
-
+                    target_StudentIDList.Add(sr.ID);
                 }
             }
 
@@ -185,9 +187,13 @@ namespace ArrangeClass
                     updateDict[srr.StudentID].Add(srr);
                 }
             }
+            
 
             // 取得學生學期對照班級學生
             Dictionary<string, List<SemsHistoryInfo>> StudSemsHisDict = QueryTransfer.GetSemsHistoryInfoByIDs(StudentIDs);
+
+            // 取得學生科別代碼
+            Dictionary<string, string> StudentDeptDict = QueryTransfer.GetStudentDeptCodeDict(target_StudentIDList);
 
 
             // 上傳類別的對應 Dictionary ，使用班別來對照
@@ -311,15 +317,20 @@ namespace ArrangeClass
                     }
                 }
 
+                // 填入科別代碼
+                if (StudentDeptDict.ContainsKey(sr.ID))
+                    departmentCode = StudentDeptDict[sr.ID];
+
 
                 // 最後一筆
                 if (lastUpdateRec != null)
                 {
                     classCode = lastUpdateRec.ClassType;
 
-                    // 使用異動的科別名稱反推科別管理找出科別代碼
-                    if (deptNameCodeDict.ContainsKey(lastUpdateRec.Department))
-                        departmentCode = deptNameCodeDict[lastUpdateRec.Department];
+                    // 當沒有科別代碼再使用異動的科別名稱反推科別管理找出科別代碼
+                    if (string.IsNullOrEmpty(departmentCode))
+                        if (deptNameCodeDict.ContainsKey(lastUpdateRec.Department))
+                            departmentCode = deptNameCodeDict[lastUpdateRec.Department];
 
                     // 處理學生年級班級，當異動學年度學期與目前學年度學期相同，讀取目前學生班級座號，不相同讀取學期對照
                     string SY = "", SS = "";
@@ -559,14 +570,19 @@ namespace ArrangeClass
                     }
                 }
 
+                // 填入科別代碼
+                if (StudentDeptDict.ContainsKey(sr.ID))
+                    departmentCode = StudentDeptDict[sr.ID];
+
                 // 最後一筆
                 if (lastUpdateRec != null)
                 {
                     classCode = lastUpdateRec.ClassType;
 
-                    // 使用異動的科別名稱反推科別管理找出科別代碼
-                    if (deptNameCodeDict.ContainsKey(lastUpdateRec.Department))
-                        departmentCode = deptNameCodeDict[lastUpdateRec.Department];
+                    // 當沒有科別代碼再使用異動的科別名稱反推科別管理找出科別代碼
+                    if (string.IsNullOrEmpty(departmentCode))
+                        if (deptNameCodeDict.ContainsKey(lastUpdateRec.Department))
+                            departmentCode = deptNameCodeDict[lastUpdateRec.Department];
 
                     // 處理學生年級班級，當異動學年度學期與目前學年度學期相同，讀取目前學生班級座號，不相同讀取學期對照
                     string SY = "", SS = "";
@@ -598,8 +614,7 @@ namespace ArrangeClass
                 }
 
                 //依照班別去對照 上傳類別
-                if (updateTypeDict.ContainsKey(classCode))
-                {
+                if (updateTypeDict.ContainsKey(classCode))                {
 
                     updateType = updateTypeDict[classCode];
                 }

@@ -257,5 +257,49 @@ ORDER BY
             return value;
         }
 
+
+        // 傳入學生系統編號取得學生代碼
+        public static Dictionary<string, string> GetStudentDeptCodeDict(List<string> StudentIDs)
+        {
+            Dictionary<string, string> value = new Dictionary<string, string>();
+            try
+            {
+                QueryHelper qh = new QueryHelper();
+                string query = string.Format(@"
+                WITH stud_data AS (
+                    SELECT
+                        student.id AS student_id,
+                        COALESCE(student.ref_dept_id, class.ref_dept_id) AS dept_id
+                    FROM
+                        student
+                        LEFT JOIN class ON student.ref_class_id = class.id
+                    WHERE
+                        student.id IN({0})
+                )
+                SELECT
+                    stud_data.student_id,
+                    dept.code
+                FROM
+                    stud_data
+                    LEFT JOIN dept ON stud_data.dept_id = dept.id;
+                ", string.Join(",", StudentIDs.ToArray()));
+
+                DataTable dt = qh.Select(query);
+
+                foreach(DataRow dr in dt.Rows)
+                {
+                    string sid = dr["student_id"] + "";
+                    if (!value.ContainsKey(sid))
+                        value.Add(sid, dr["code"] + "");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return value;
+        }
+
     }
 }
