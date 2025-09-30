@@ -9,19 +9,19 @@ namespace ClassAndStudentInfo
 {
     class CompletionStudentObj
     {
-        public string 學生ID { get; set; }
-        public string 學生名字 { get; set; }
-        public string 性別 { get; set; }
-        public string 科別 { get; set; }
-        public string 科別ID { get; set; }
+        public string StudentID { get; set; }
+        public string StudentName { get; set; }
+        public string Gender { get; set; }
+        public string Department { get; set; }
+        public string DepartmentID { get; set; }
 
         public CompletionStudentObj(DataRow row)
         {
-            學生ID = row["ref_student_id"].ToString();
-            學生名字 = row["ss_name"].ToString();
-            性別 = row["ss_gender"].ToString();
-            科別 = row["ss_dept"].ToString();
-            科別ID = row["_dept"].ToString();
+            StudentID = row["ref_student_id"].ToString();
+            StudentName = row["ss_name"].ToString();
+            Gender = row["ss_gender"].ToString();
+            Department = row["ss_dept"].ToString();
+            DepartmentID = row["_dept"].ToString();
         }
     }
 }

@@ -8,26 +8,25 @@ namespace ClassAndStudentInfo
 {
     class StudentObj
     {
-        public string 學生ID { get; set; }
-        public string 學生名字 { get; set; }
-        public string 班級ID { get; set; }
-        public string 狀態 { get; set; }
-        public string 性別 { get; set; }
-        public string 年級 { get; set; }
-        public string 科別 { get; set; }
-        public string 科別ID { get; set; }
+        public string StudentID { get; set; }
+        public string StudentName { get; set; }
+        public string ClassID { get; set; }
+    
+        public string Gender { get; set; }
+        public string GradeYear { get; set; }
+        public string Department { get; set; }
+        public string DepartmentID { get; set; }
 
 
         public StudentObj(DataRow row)
         {
-            學生ID = row["id"].ToString();
-            學生名字 = row["name"].ToString();
-            班級ID = row["ref_class_id"].ToString();
-            狀態 = row["status"].ToString();
-            性別 = row["gender"].ToString();
-            年級 = row["grade_year"].ToString();
-            科別 = row["dept_name"].ToString();
-            科別ID = row["_dept"].ToString();
+            StudentID = row["id"].ToString();
+            StudentName = row["name"].ToString();
+            ClassID = row["ref_class_id"].ToString();      
+            Gender = row["gender"].ToString();
+            GradeYear = row["grade_year"].ToString();
+            Department = row["dept_name"].ToString();
+            DepartmentID = row["dept_id"].ToString();
 
         }
     }

@@ -124,4 +124,7 @@
   <data name="班級學生概況1" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\班級學生概況1.xlsx;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="班級學生概況2025" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\班級學生概況2025.xlsx;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>

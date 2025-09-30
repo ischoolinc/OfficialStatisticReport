@@ -21,7 +21,9 @@ namespace ClassAndStudentInfo
 
         private void PrintBranch_Load(object sender, EventArgs e)
         {
-            List<SHDeptGroupRecord>  lstdeptgroup = new List<SHDeptGroupRecord>();
+            this.MaximumSize = this.MinimumSize = this.Size;
+
+            List<SHDeptGroupRecord> lstdeptgroup = new List<SHDeptGroupRecord>();
             lstdeptgroup = SHDeptGroup.SelectAll();
             lstCourseKind.Items.Clear();
             //var newItem = new ComboBoxItem();
@@ -40,14 +42,15 @@ namespace ClassAndStudentInfo
         private void btnPrint_Click(object sender, EventArgs e)
         {
             Printer printer = new Printer();
-            string CourseIDs = "";
+            List<string> BranchIDs = new List<string>();
             for (int i = 0; i < lstCourseKind.Items.Count; i++)
-                if (lstCourseKind.Items[i].Checked == true)
-                    CourseIDs=CourseIDs+lstCourseKind.Items[i].SubItems[1].Text+",";
-            printer.Start(CourseIDs,txtTitle.Text,chkUnGraduate.Checked);
+                if (lstCourseKind.Items[i].Checked)
+                    BranchIDs.Add(lstCourseKind.Items[i].SubItems[1].Text);
+
+            printer.Start(BranchIDs, txtTitle.Text);
             this.Close();
         }
-        
+
         private void btnCancel_Click(object sender, EventArgs e)
         {
             this.Close();

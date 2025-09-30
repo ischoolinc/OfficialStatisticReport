@@ -45,9 +45,9 @@ namespace ClassAndStudentInfo
             this.btnPrint.AccessibleRole = System.Windows.Forms.AccessibleRole.PushButton;
             this.btnPrint.BackColor = System.Drawing.Color.Transparent;
             this.btnPrint.ColorTable = DevComponents.DotNetBar.eButtonColor.OrangeWithBackground;
-            this.btnPrint.Location = new System.Drawing.Point(73, 338);
+            this.btnPrint.Location = new System.Drawing.Point(134, 303);
             this.btnPrint.Name = "btnPrint";
-            this.btnPrint.Size = new System.Drawing.Size(120, 45);
+            this.btnPrint.Size = new System.Drawing.Size(101, 36);
             this.btnPrint.Style = DevComponents.DotNetBar.eDotNetBarStyle.StyleManagerControlled;
             this.btnPrint.TabIndex = 2;
             this.btnPrint.Text = "列印";
@@ -58,9 +58,9 @@ namespace ClassAndStudentInfo
             this.btnCancel.AccessibleRole = System.Windows.Forms.AccessibleRole.PushButton;
             this.btnCancel.BackColor = System.Drawing.Color.Transparent;
             this.btnCancel.ColorTable = DevComponents.DotNetBar.eButtonColor.OrangeWithBackground;
-            this.btnCancel.Location = new System.Drawing.Point(212, 338);
+            this.btnCancel.Location = new System.Drawing.Point(256, 303);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(120, 45);
+            this.btnCancel.Size = new System.Drawing.Size(101, 36);
             this.btnCancel.Style = DevComponents.DotNetBar.eDotNetBarStyle.StyleManagerControlled;
             this.btnCancel.TabIndex = 3;
             this.btnCancel.Text = "取消";
@@ -68,9 +68,9 @@ namespace ClassAndStudentInfo
             // 
             // txtTitle
             // 
-            this.txtTitle.Location = new System.Drawing.Point(185, 285);
+            this.txtTitle.Location = new System.Drawing.Point(197, 247);
             this.txtTitle.Name = "txtTitle";
-            this.txtTitle.Size = new System.Drawing.Size(181, 27);
+            this.txtTitle.Size = new System.Drawing.Size(169, 27);
             this.txtTitle.TabIndex = 18;
             this.txtTitle.TextChanged += new System.EventHandler(this.txtTitle_TextChanged);
             // 
@@ -82,7 +82,7 @@ namespace ClassAndStudentInfo
             // 
             this.labelX2.BackgroundStyle.Class = "";
             this.labelX2.BackgroundStyle.CornerType = DevComponents.DotNetBar.eCornerType.Square;
-            this.labelX2.Location = new System.Drawing.Point(12, 285);
+            this.labelX2.Location = new System.Drawing.Point(12, 242);
             this.labelX2.Name = "labelX2";
             this.labelX2.Size = new System.Drawing.Size(179, 37);
             this.labelX2.TabIndex = 17;
@@ -99,7 +99,7 @@ namespace ClassAndStudentInfo
             this.lstCourseKind.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1,
             this.columnHeader2});
-            this.lstCourseKind.Font = new System.Drawing.Font("標楷體", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(136)));
+            this.lstCourseKind.Font = new System.Drawing.Font("DFKai-SB", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(136)));
             this.lstCourseKind.HideSelection = false;
             this.lstCourseKind.Location = new System.Drawing.Point(12, 55);
             this.lstCourseKind.Name = "lstCourseKind";
@@ -142,17 +142,18 @@ namespace ClassAndStudentInfo
             // 
             this.chkUnGraduate.BackgroundStyle.Class = "";
             this.chkUnGraduate.BackgroundStyle.CornerType = DevComponents.DotNetBar.eCornerType.Square;
-            this.chkUnGraduate.Location = new System.Drawing.Point(13, 242);
+            this.chkUnGraduate.Location = new System.Drawing.Point(13, 446);
             this.chkUnGraduate.Name = "chkUnGraduate";
             this.chkUnGraduate.Size = new System.Drawing.Size(354, 37);
             this.chkUnGraduate.Style = DevComponents.DotNetBar.eDotNetBarStyle.StyleManagerControlled;
             this.chkUnGraduate.TabIndex = 24;
             this.chkUnGraduate.Text = "取得修業資格統計包含364輔導延修";
+            this.chkUnGraduate.Visible = false;
             // 
             // PrintBranch
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(379, 393);
+            this.ClientSize = new System.Drawing.Size(379, 353);
             this.Controls.Add(this.chkUnGraduate);
             this.Controls.Add(this.txtTitle);
             this.Controls.Add(this.labelX2);
@@ -161,8 +162,9 @@ namespace ClassAndStudentInfo
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnPrint);
             this.DoubleBuffered = true;
-            this.Font = new System.Drawing.Font("標楷體", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(136)));
+            this.Font = new System.Drawing.Font("DFKai-SB", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(136)));
             this.Name = "PrintBranch";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "表-7 高中職學校班級及學生概況（一）";
             this.Load += new System.EventHandler(this.PrintBranch_Load);
             this.ResumeLayout(false);
