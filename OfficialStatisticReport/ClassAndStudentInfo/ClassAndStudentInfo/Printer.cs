@@ -23,7 +23,12 @@ namespace ClassAndStudentInfo
 
         //        private List<CompletionStudentObj> _CompletionStudentList;
         //private List<ReStudentObj> _ReStudentList;
+        // 一般生
         private Dictionary<String, List<StudentObj>> DeptDic;
+
+        // 延修生
+        private Dictionary<String, List<StudentObj>> DeptDic2;
+
         Dictionary<String, String> Dept_ref; //科別代碼對照,key=code,value=name;
 
         private BackgroundWorker _BGWClassStudentAbsenceDetail; //背景模式
@@ -86,7 +91,7 @@ namespace ClassAndStudentInfo
             QueryDeptCode(); //建立科別代號表
 
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
-
+            // 一般生
             string sql = string.Format(@"
             WITH student_data AS (
                 SELECT
@@ -95,12 +100,13 @@ namespace ClassAndStudentInfo
                     student.ref_class_id,
                     gender,
                     class.grade_year,
+                    student.status,
                     COALESCE(student.ref_dept_id, class.ref_dept_id) AS dept_id
                 FROM
                     student
                     LEFT JOIN class ON student.ref_class_id = class.id
                 WHERE
-                    student.status = 1
+                    student.status IN(1,2)
                     AND class.grade_year IN(1, 2, 3)
             )
             SELECT
@@ -203,7 +209,7 @@ namespace ClassAndStudentInfo
             cs[0, 29].PutValue(K12.Data.School.ChineseName + "(教務處)");
             string DeptName = "";
             foreach (string deptName in DeptDic.Keys)
-            {                
+            {
                 List<StudentObj> studentList = DeptDic[deptName];
                 //cs[index, 1].PutValue(getDeptCode(k.Key)); //科別代碼
                 //cs[index, 2].PutValue(k.Key); //科別名稱
@@ -216,14 +222,14 @@ namespace ClassAndStudentInfo
                 cs[index, 8].PutValue(getStudentCount(studentList)); //總學生數
                 cs[index, 9].PutValue(getStudentCount(studentList, "1")); //總男學生數
                 cs[index, 10].PutValue(getStudentCount(studentList, "0")); //總女學生數
-                cs[index, 11].PutValue(getStudentCount(studentList, "1", "1")); //一年級男學生數
+                cs[index, 11].PutValue(getStudentCount(studentList, "1", "1" )); //一年級男學生數
                 cs[index, 12].PutValue(getStudentCount(studentList, "1", "0")); //一年級女學生數
                 cs[index, 13].PutValue(getStudentCount(studentList, "2", "1")); //二年級男學生數
                 cs[index, 14].PutValue(getStudentCount(studentList, "2", "0")); //二年級女學生數
                 cs[index, 15].PutValue(getStudentCount(studentList, "3", "1")); //三年級男學生數
                 cs[index, 16].PutValue(getStudentCount(studentList, "3", "0")); //三年級女學生數 
-                cs[index, 17].PutValue(getStudentCount(studentList, "5", "1")); //延修男學生數
-                cs[index, 18].PutValue(getStudentCount(studentList, "5", "0")); //延修女學生數
+                cs[index, 17].PutValue(getStudentCount(studentList, "4", "1")); //延修男學生數
+                cs[index, 18].PutValue(getStudentCount(studentList, "4", "0")); //延修女學生數
 
                 cs[index, 19].PutValue(getGraduateStudentCount(deptName));  //上學年畢業生總數
                 cs[index, 20].PutValue(getGraduateStudentCount(deptName, "1")); //上學年男畢業生總數
@@ -374,7 +380,10 @@ namespace ClassAndStudentInfo
         //傳入學生清單取得指定年級,性別的學生數量,grade=5代表查詢延修生
         private int getStudentCount(List<StudentObj> list, String grade, String gender)
         {
-            return list.Count(student => student.GradeYear == grade && student.Gender == gender);
+            if (grade == "4")
+                return list.Count(student => student.Gender == gender && student.Status == "2");
+            else
+                return list.Count(student => student.GradeYear == grade && student.Gender == gender && student.Status == "1");
         }
 
         //取得指定科別的畢業生總數

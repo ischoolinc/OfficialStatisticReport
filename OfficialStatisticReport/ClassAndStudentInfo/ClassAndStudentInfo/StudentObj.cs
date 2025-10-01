@@ -17,6 +17,7 @@ namespace ClassAndStudentInfo
         public string Department { get; set; }
         public string DepartmentID { get; set; }
 
+        public string Status { get; set; }
 
         public StudentObj(DataRow row)
         {
@@ -27,7 +28,7 @@ namespace ClassAndStudentInfo
             GradeYear = row["grade_year"].ToString();
             Department = row["dept_name"].ToString();
             DepartmentID = row["dept_id"].ToString();
-
+            Status = row["status"].ToString();
         }
     }
 }
