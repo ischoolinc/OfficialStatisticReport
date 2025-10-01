@@ -23,10 +23,11 @@ namespace ClassAndStudentInfo
 
         //        private List<CompletionStudentObj> _CompletionStudentList;
         //private List<ReStudentObj> _ReStudentList;
-        // 一般生
+
+        // 一般生、延修生:取得學生來源：學生狀態2+異動代碼:235+異動年級：延修生。
         private Dictionary<String, List<StudentObj>> DeptDic;
 
-        // 延修生
+
         private Dictionary<String, List<StudentObj>> DeptDic2;
 
         Dictionary<String, String> Dept_ref; //科別代碼對照,key=code,value=name;
@@ -91,23 +92,48 @@ namespace ClassAndStudentInfo
             QueryDeptCode(); //建立科別代號表
 
             FISCA.Data.QueryHelper _Q = new FISCA.Data.QueryHelper();
-            // 一般生
+            // 一般生、延修生:取得學生來源：學生狀態2+異動代碼:235+異動年級：延修生。
             string sql = string.Format(@"
             WITH student_data AS (
-                SELECT
-                    student.id,
-                    student.name,
-                    student.ref_class_id,
-                    gender,
-                    class.grade_year,
-                    student.status,
-                    COALESCE(student.ref_dept_id, class.ref_dept_id) AS dept_id
-                FROM
-                    student
-                    LEFT JOIN class ON student.ref_class_id = class.id
-                WHERE
-                    student.status IN(1,2)
-                    AND class.grade_year IN(1, 2, 3)
+               SELECT
+                student.id,
+                student.name,
+                student.ref_class_id,
+                gender,
+                class.grade_year,
+                student.status,
+                COALESCE(student.ref_dept_id, class.ref_dept_id) AS dept_id
+            FROM
+                student
+                LEFT JOIN class ON student.ref_class_id = class.id
+            WHERE
+                student.status = 1
+                AND class.grade_year IN(1, 2, 3)
+            UNION
+            ALL
+            SELECT
+                student.id,
+                student.name,
+                student.ref_class_id,
+                gender,
+                class.grade_year,
+                student.status,
+                COALESCE(student.ref_dept_id, class.ref_dept_id) AS dept_id
+            FROM
+                student
+                LEFT JOIN class ON student.ref_class_id = class.id
+            WHERE
+                student.id IN(
+                    SELECT
+                        student.id AS student_id
+                    FROM
+                        student
+                        INNER JOIN update_record ON student.id = update_record.ref_student_id
+                    WHERE
+                        student.status = 2
+                        AND update_code = '235'
+                        AND ss_grade_year = -1
+                )
             )
             SELECT
                 student_data.*,
@@ -121,6 +147,7 @@ namespace ClassAndStudentInfo
             ", string.Join(",", Public_BranchIDs.ToArray()));
 
             DataTable dt = _Q.Select(sql);
+
             List<StudentObj> StudentList = new List<StudentObj>();
             if (dt.Rows.Count > 0 || _GraduateStudentList.Count > 0)
             {
@@ -222,7 +249,7 @@ namespace ClassAndStudentInfo
                 cs[index, 8].PutValue(getStudentCount(studentList)); //總學生數
                 cs[index, 9].PutValue(getStudentCount(studentList, "1")); //總男學生數
                 cs[index, 10].PutValue(getStudentCount(studentList, "0")); //總女學生數
-                cs[index, 11].PutValue(getStudentCount(studentList, "1", "1" )); //一年級男學生數
+                cs[index, 11].PutValue(getStudentCount(studentList, "1", "1")); //一年級男學生數
                 cs[index, 12].PutValue(getStudentCount(studentList, "1", "0")); //一年級女學生數
                 cs[index, 13].PutValue(getStudentCount(studentList, "2", "1")); //二年級男學生數
                 cs[index, 14].PutValue(getStudentCount(studentList, "2", "0")); //二年級女學生數
@@ -337,10 +364,12 @@ namespace ClassAndStudentInfo
             HashSet<string> uniqueClassIDs = new HashSet<string>();
             foreach (StudentObj student in list)
             {
-                if (!string.IsNullOrEmpty(student.ClassID))
-                {
-                    uniqueClassIDs.Add(student.ClassID);
-                }
+                // 只計算一般狀態
+                if (student.Status == "1")
+                    if (!string.IsNullOrEmpty(student.ClassID))
+                    {
+                        uniqueClassIDs.Add(student.ClassID);
+                    }
             }
             return uniqueClassIDs.Count;
         }
@@ -355,10 +384,11 @@ namespace ClassAndStudentInfo
             HashSet<string> uniqueClassIDs = new HashSet<string>();
             foreach (StudentObj student in list)
             {
-                if (!string.IsNullOrEmpty(student.ClassID) && student.GradeYear == grade)
-                {
-                    uniqueClassIDs.Add(student.ClassID);
-                }
+                if (student.Status == "1")
+                    if (!string.IsNullOrEmpty(student.ClassID) && student.GradeYear == grade)
+                    {
+                        uniqueClassIDs.Add(student.ClassID);
+                    }
             }
             return uniqueClassIDs.Count;
         }
