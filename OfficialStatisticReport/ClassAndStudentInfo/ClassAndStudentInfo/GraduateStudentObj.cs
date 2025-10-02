@@ -21,7 +21,7 @@ namespace ClassAndStudentInfo
             StudentName = row["ss_name"].ToString();
             Gender = row["ss_gender"].ToString();
             Department = row["ss_dept"].ToString();
-            DepartmentID = row["_dept"].ToString();
+            DepartmentID = row["dept_id"].ToString();
         }
     }
 }

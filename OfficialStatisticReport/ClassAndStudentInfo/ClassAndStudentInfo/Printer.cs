@@ -549,7 +549,7 @@ namespace ClassAndStudentInfo
             }
             catch (Exception e)
             {
-                Console.WriteLine("getGraduateStudent(),", e.Message);
+                Console.WriteLine("getGraduateStudent()," + e.Message);
             }
 
             return list;
