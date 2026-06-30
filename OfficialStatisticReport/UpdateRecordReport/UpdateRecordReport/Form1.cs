@@ -45,13 +45,13 @@ namespace UpdateRecordReport
         //List<RecordObj> 普通科, 綜合高中科, 職業科;
         string Public_BranchID;
         string Public_BranchName;
-        
+
         public Form1(string BranchID, string BranchName)
         {
             InitializeComponent();
             Public_BranchID = BranchID;
             Public_BranchName = BranchName;
-            
+
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -102,14 +102,14 @@ namespace UpdateRecordReport
         {
             #region Column1選單項目
             _DefaultItem = new Dictionary<string, List<string>>();
-            _DefaultItem.Add("轉出:遷居",new List<string>(new string[]{"311"}));
+            _DefaultItem.Add("轉出:遷居", new List<string>(new string[] { "311" }));
             _DefaultItem.Add("轉出:家長調職", new List<string>(new string[] { "312" }));
             _DefaultItem.Add("轉出:改變環境", new List<string>(new string[] { "313" }));
             //_DefaultItem.Add("轉出:輔導轉學", new List<string>(new string[] { "315" }));
-            _DefaultItem.Add("轉出:其他", new List<string>(new string[] { "314","316" }));
+            _DefaultItem.Add("轉出:其他", new List<string>(new string[] { "314", "316" }));
 
-            _DefaultItem.Add("放棄、廢止、註銷學籍:主動辦理放棄學籍", new List<string>(new string[] { "367", "369", "378","379" }));//379 不計人數
-            _DefaultItem.Add("放棄、廢止、註銷學籍:因休學期滿而放棄、廢止學籍", new List<string>(new string[] { "380","381" })); //380 不計人數
+            _DefaultItem.Add("放棄、廢止、註銷學籍:主動辦理放棄學籍", new List<string>(new string[] { "367", "369", "378", "379" }));//379 不計人數
+            _DefaultItem.Add("放棄、廢止、註銷學籍:因休學期滿而放棄、廢止學籍", new List<string>(new string[] { "380", "381" })); //380 不計人數
             _DefaultItem.Add("放棄、廢止、註銷學籍:其他(含註銷學籍)", new List<string>(new string[] { "374", "375" }));  //375 不計人數
             //_DefaultItem.Add("退學:自動退學", new List<string>(new string[] { "321" }));
             //_DefaultItem.Add("退學:休學期滿", new List<string>(new string[] { "323" }));
@@ -122,16 +122,16 @@ namespace UpdateRecordReport
             _DefaultItem.Add("休學:兵役", new List<string>(new string[] { "345" }));
             _DefaultItem.Add("休學:出國", new List<string>(new string[] { "348" }));
             _DefaultItem.Add("休學:缺曠課過多", new List<string>(new string[] { "344" }));
-            _DefaultItem.Add("休學:其他", new List<string>(new string[] { "346","347","349" }));
+            _DefaultItem.Add("休學:其他", new List<string>(new string[] { "346", "347", "349" }));
 
             _DefaultItem.Add("復學生", new List<string>(new string[] { "221", "222", "223", "224", "225", "226", "237", "238", "239", "240", }));
 
             _DefaultItem.Add("轉入:他校轉入", new List<string>(new string[] { "111", "112", "113", "114", "115", "121", "122", "123", "124", }));
-            _DefaultItem.Add("轉入:本校不同學制轉入",new List<string>());
+            _DefaultItem.Add("轉入:本校不同學制轉入", new List<string>());
 
             _DefaultItem.Add("死亡", new List<string>(new string[] { "361" }));
             _DefaultItem.Add("輔導延修", new List<string>(new string[] { "364" }));
-            _DefaultItem.Add("修業年限期滿", new List<string>(new string[] { "365","372" }));
+            _DefaultItem.Add("修業年限期滿", new List<string>(new string[] { "365", "372" }));
             //_DefaultItem.Add("未達畢業標準", new List<string>(new string[] { "366" }));
 
             _DefaultItem.Add("未達畢業標準(指德性評量) ", new List<string>(new string[] { "366" }));
@@ -168,7 +168,7 @@ namespace UpdateRecordReport
                         {
                             //延修代碼不可為選項
                             if (code != "235" && code != "236" && code != "243" && code != "244") mustAdd = true;
-                        } 
+                        }
                     }
                 }
 
@@ -228,7 +228,7 @@ namespace UpdateRecordReport
             string updateCode = "'501','235','236','243','244','"; //畢業,延修一,延修二
             foreach (List<string> codes in _MappingData.Values)
             {
-                foreach(string s in codes)
+                foreach (string s in codes)
                 {
                     updateCode += s + "','";
                 }
@@ -251,7 +251,7 @@ namespace UpdateRecordReport
                         FROM
                             student_data JOIN  dept ON student_data._dept= dept.id");
             //sb.Append("select update_record.id,ref_student_id,ss_name,ss_student_number,ss_gender,ss_grade_year,ss_dept,update_code,student.status from update_record left join student on ref_student_id = student.id left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id ");
-            sb.Append(string.Format(" where school_year={0} and semester={1} and update_code in ({2}) and dept.ref_dept_group_id in ({3}) ", _SchoolYear, _Semester, updateCode,  Public_BranchID.Substring(0,Public_BranchID.Length-1)));
+            sb.Append(string.Format(" where school_year={0} and semester={1} and update_code in ({2}) and dept.ref_dept_group_id in ({3}) ", _SchoolYear, _Semester, updateCode, Public_BranchID.Substring(0, Public_BranchID.Length - 1)));
 
             DataTable dt = _Q.Select(sb.ToString());
 
@@ -265,7 +265,7 @@ namespace UpdateRecordReport
                 string uid = row["id"].ToString();
                 string sid = row["ref_student_id"].ToString();
                 string code = row["update_code"].ToString();
-                
+
                 //有501代碼且不存在於passList者,sid加入清單
                 if (code == "501" && !graduateList.Contains(sid))
                 {
@@ -275,7 +275,7 @@ namespace UpdateRecordReport
                 //有235或236代碼且不存在於delayList者,sid加入清單
                 if ((code == "235" || code == "236" || code == "243" || code == "244") && !delayList.Contains(sid))
                 {
-                   
+
                     delayList.Add(sid);
                 }
 
@@ -366,7 +366,7 @@ namespace UpdateRecordReport
             cs[0, 10].PutValue(K12.Data.School.ChineseName + "(教務處)");
             cs[4, 0].PutValue(K12.Data.School.Code);
             cs[4, 1].PutValue(Public_BranchName);
-            cs[2, 0].PutValue("表 - 16 高級中等學校學生異動概況─"+Public_BranchName);
+            cs[2, 0].PutValue("表 - 16 高級中等學校學生異動概況─" + Public_BranchName);
             foreach (KeyValuePair<string, List<RecordObj>> k in dica)
             {
                 cs[index, 2].PutValue(k.Value.Count);
@@ -654,10 +654,10 @@ namespace UpdateRecordReport
             else
             {
                 //UDT無資料則提供預設標記
-                foreach(KeyValuePair<string,List<string>> k in _DefaultItem)
+                foreach (KeyValuePair<string, List<string>> k in _DefaultItem)
                 {
                     //若沒有預設代碼就給一個空白的row
-                    if(k.Value.Count == 0)
+                    if (k.Value.Count == 0)
                     {
                         row = new DataGridViewRow();
                         row.CreateCells(dataGridViewX1);
@@ -672,7 +672,8 @@ namespace UpdateRecordReport
                             row = new DataGridViewRow();
                             row.CreateCells(dataGridViewX1);
                             row.Cells[0].Value = k.Key;
-                            row.Cells[1].Value = _QueryUpdateCodes[s];
+                            if (_QueryUpdateCodes.ContainsKey(s))
+                                row.Cells[1].Value = _QueryUpdateCodes[s];
                             dataGridViewX1.Rows.Add(row);
                         }
                     }
