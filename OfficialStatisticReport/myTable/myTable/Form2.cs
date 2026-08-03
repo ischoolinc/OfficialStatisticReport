@@ -22,6 +22,7 @@ namespace myTable
     {
         String _SchoolYear; //當前學年度
         private BackgroundWorker _BGWClassStudentAbsenceDetail; //背景模式
+        private BackgroundWorker _BGWInitialLoad; //背景載入模式(視窗開啟時，非同步載入標籤與設定資料，避免卡住UI)
 
         Dictionary<String, String> _column3Items; //全部類別對照表,key=TagId,value=prefix+":"+name
 
@@ -50,16 +51,61 @@ namespace myTable
             //新生中具原住民身分者
             dataGridViewComboBoxExColumn3Prepare();
 
-            //入學方式、入學身分、新生中具原住民身分者 來源欄位填值
-            Column3Prepare();
-
             SchoolYearItem();
 
             //LoadLastRecord(); //舊CODE 方法，不再使用，故註解。
 
-            LoadConfigXml();
-
             LoadClassTypeCodeDic();
+
+            //入學方式、入學身分、新生中具原住民身分者 來源欄位填值 + 上次儲存設定
+            //改為非同步載入：先讓視窗顯示，避免因查詢/讀取伺服器資料而卡住UI
+            StartInitialDataLoad();
+        }
+
+        // 視窗開啟時所需的伺服器資料(標籤清單、上次儲存設定)非同步載入，載入期間鎖定相關表格並顯示loading動畫
+        private void StartInitialDataLoad()
+        {
+            dataGridViewX1.Enabled = false;
+            dataGridViewX2.Enabled = false;
+            dataGridViewX3.Enabled = false;
+            picLoding.Visible = true;
+
+            _BGWInitialLoad = new BackgroundWorker();
+            _BGWInitialLoad.DoWork += _BGWInitialLoad_DoWork;
+            _BGWInitialLoad.RunWorkerCompleted += _BGWInitialLoad_Completed;
+            _BGWInitialLoad.RunWorkerAsync();
+        }
+
+        private void _BGWInitialLoad_DoWork(object sender, DoWorkEventArgs e)
+        {
+            // 確保預設的入學方式、入學身分、原住民類別標籤已建立(僅第一次開啟本報表時才需要)，
+            // 需在查詢標籤資料(FetchColumn3Data)之前執行，才能讓新建立的標籤一併被查到。
+            Progress.EnsureDefaultTagsBootstrapped();
+
+            e.Result = new InitialLoadResult
+            {
+                TagData = FetchColumn3Data(),
+                ConfigXml = FetchConfigXml()
+            };
+        }
+
+        private void _BGWInitialLoad_Completed(object sender, RunWorkerCompletedEventArgs e)
+        {
+            InitialLoadResult result = (InitialLoadResult)e.Result;
+
+            ApplyColumn3Data(result.TagData);
+            ApplyConfigXml(result.ConfigXml);
+
+            dataGridViewX1.Enabled = true;
+            dataGridViewX2.Enabled = true;
+            dataGridViewX3.Enabled = true;
+            picLoding.Visible = false;
+        }
+
+        private class InitialLoadResult
+        {
+            public DataTable TagData;
+            public XmlElement ConfigXml;
         }
 
         private void LoadClassTypeCodeDic()
@@ -80,17 +126,133 @@ namespace myTable
             //_ClassTypeCodeDic.Add("05", "重點產業班");
             //_ClassTypeCodeDic.Add("06", "產業人力套案專班");
         }
-        private void LoadConfigXml()
+        // 讀取(必要時建立)上次儲存設定的Config XML，屬於伺服器存取，於背景執行緒呼叫
+        private XmlElement FetchConfigXml()
         {
             ConfigData cd = K12.Data.School.Configuration["新生入學統計報表_來源目標設定Config"];
 
             XmlElement config = cd.GetXml("XmlData", null);
 
             // 假如要刪除所有舊資料Config 資料，可以啟用下面三行。
-            //config.RemoveAll(); 
+            //config.RemoveAll();
             //cd.SetXml("XmlData", config);
             //cd.Save();
 
+            if (config == null) //如果是空的，建立預設設定檔供下次使用(維持原行為：本次開窗仍不填入表格)
+            {
+                #region 產生空白設定檔
+
+                XmlElement newConfig = new XmlDocument().CreateElement("新生入學統計報表_來源目標設定Config");
+
+                XmlElement EnterSchool_Way = newConfig.OwnerDocument.CreateElement("入學方式");
+
+                List<string> EnterSchoolWays = new List<string>();
+
+                #region 1.入學方式
+                //九種入學方式
+                EnterSchoolWays.Add("入學方式:免試入學--校內直升");
+                EnterSchoolWays.Add("入學方式:免試入學--就學區免試(含共同就學區)");
+                EnterSchoolWays.Add("入學方式:免試入學--技優甄審");
+                EnterSchoolWays.Add("入學方式:免試入學--免試獨招");
+                EnterSchoolWays.Add("入學方式:免試入學--其他");
+                EnterSchoolWays.Add("入學方式:特色招生--考試分發");
+                EnterSchoolWays.Add("入學方式:特色招生--甄選入學");
+                EnterSchoolWays.Add("入學方式:適性輔導安置(十二年安置)");
+                EnterSchoolWays.Add("入學方式:其他");
+
+                int i = 1;
+
+                foreach (string way in EnterSchoolWays)
+                {
+                    XmlElement EnterSchool_Way_Item = EnterSchool_Way.OwnerDocument.CreateElement("item");
+
+                    EnterSchool_Way_Item.SetAttribute("ID", "" + i);
+
+                    EnterSchool_Way_Item.SetAttribute("target", way);
+
+                    EnterSchool_Way_Item.SetAttribute("source", "");
+
+                    EnterSchool_Way.AppendChild(EnterSchool_Way_Item);
+
+                    i++;
+                }
+                #endregion
+
+                #region 2.入學身分
+                XmlElement EnterSchool_identity = newConfig.OwnerDocument.CreateElement("入學身分");
+
+                XmlElement EnterSchool_identity1 = EnterSchool_identity.OwnerDocument.CreateElement("item");
+
+                EnterSchool_identity1.SetAttribute("ID", "1");
+
+                EnterSchool_identity1.SetAttribute("target", "入學身份:一般生(非外加錄取)");
+
+                EnterSchool_identity1.SetAttribute("source", "");
+
+                EnterSchool_identity.AppendChild(EnterSchool_identity1);
+
+                XmlElement EnterSchool_identity2 = EnterSchool_identity.OwnerDocument.CreateElement("item");
+
+                EnterSchool_identity2.SetAttribute("ID", "2");
+
+                EnterSchool_identity2.SetAttribute("target", "入學身份:外加錄取--原住民生");
+
+                EnterSchool_identity2.SetAttribute("source", "");
+
+                EnterSchool_identity.AppendChild(EnterSchool_identity2);
+
+                XmlElement EnterSchool_identity3 = EnterSchool_identity.OwnerDocument.CreateElement("item");
+
+                EnterSchool_identity3.SetAttribute("ID", "3");
+
+                EnterSchool_identity3.SetAttribute("target", "入學身份:外加錄取--身心障礙生");
+
+                EnterSchool_identity3.SetAttribute("source", "");
+
+                EnterSchool_identity.AppendChild(EnterSchool_identity3);
+
+                XmlElement EnterSchool_identity4 = EnterSchool_identity.OwnerDocument.CreateElement("item");
+
+                EnterSchool_identity4.SetAttribute("ID", "4");
+
+                EnterSchool_identity4.SetAttribute("target", "入學身份:外加錄取--其他");
+
+                EnterSchool_identity4.SetAttribute("source", "");
+
+                EnterSchool_identity.AppendChild(EnterSchool_identity4);
+
+                newConfig.AppendChild(EnterSchool_identity);
+                #endregion
+
+                #region 3.新生中具原住民身分者
+                XmlElement FreshMenWith_Aboriginal_Identity = newConfig.OwnerDocument.CreateElement("新生中具原住民身分者");
+
+                XmlElement FreshMenWith_Aboriginal_Identity1 = FreshMenWith_Aboriginal_Identity.OwnerDocument.CreateElement("item");
+
+                FreshMenWith_Aboriginal_Identity1.SetAttribute("ID", "1");
+
+                FreshMenWith_Aboriginal_Identity1.SetAttribute("target", "新生中具原住民身分者");
+
+                FreshMenWith_Aboriginal_Identity1.SetAttribute("source", "");
+
+                FreshMenWith_Aboriginal_Identity.AppendChild(FreshMenWith_Aboriginal_Identity1);
+
+                newConfig.AppendChild(FreshMenWith_Aboriginal_Identity);
+                #endregion
+
+                cd.SetXml("XmlData", newConfig);
+
+                #endregion
+            }
+
+            cd.Save();
+
+            return config;
+        }
+
+        // 依 FetchConfigXml() 取得的設定，將資料填入表格，須於UI執行緒呼叫
+        private void ApplyConfigXml(XmlElement config)
+        {
             if (config != null) //如果不是空的
             {
                 XmlElement EnterSchool_Way = (XmlElement)config.SelectSingleNode("入學方式");
@@ -183,113 +345,7 @@ namespace myTable
                     }
                 }
             }
-            else
-            {
-                #region 產生空白設定檔
-
-                config = new XmlDocument().CreateElement("新生入學統計報表_來源目標設定Config");
-
-                XmlElement EnterSchool_Way = config.OwnerDocument.CreateElement("入學方式");
-
-                List<string> EnterSchoolWays = new List<string>();
-
-                #region 1.入學方式
-                //九種入學方式
-                EnterSchoolWays.Add("入學方式:免試入學--校內直升");
-                EnterSchoolWays.Add("入學方式:免試入學--就學區免試(含共同就學區)");
-                EnterSchoolWays.Add("入學方式:免試入學--技優甄審");
-                EnterSchoolWays.Add("入學方式:免試入學--免試獨招");
-                EnterSchoolWays.Add("入學方式:免試入學--其他");
-                EnterSchoolWays.Add("入學方式:特色招生--考試分發");
-                EnterSchoolWays.Add("入學方式:特色招生--甄選入學");
-                EnterSchoolWays.Add("入學方式:適性輔導安置(十二年安置)");
-                EnterSchoolWays.Add("入學方式:其他");
-
-                int i = 1;
-
-                foreach (string way in EnterSchoolWays)
-                {
-                    XmlElement EnterSchool_Way_Item = EnterSchool_Way.OwnerDocument.CreateElement("item");
-
-                    EnterSchool_Way_Item.SetAttribute("ID", "" + i);
-
-                    EnterSchool_Way_Item.SetAttribute("target", way);
-
-                    EnterSchool_Way_Item.SetAttribute("source", "");
-
-                    EnterSchool_Way.AppendChild(EnterSchool_Way_Item);
-
-                    i++;
-                }
-                #endregion
-
-                #region 2.入學身分
-                XmlElement EnterSchool_identity = config.OwnerDocument.CreateElement("入學身分");
-
-                XmlElement EnterSchool_identity1 = EnterSchool_identity.OwnerDocument.CreateElement("item");
-
-                EnterSchool_identity1.SetAttribute("ID", "1");
-
-                EnterSchool_identity1.SetAttribute("target", "入學身份:一般生(非外加錄取)");
-
-                EnterSchool_identity1.SetAttribute("source", "");
-
-                EnterSchool_identity.AppendChild(EnterSchool_identity1);
-
-                XmlElement EnterSchool_identity2 = EnterSchool_identity.OwnerDocument.CreateElement("item");
-
-                EnterSchool_identity2.SetAttribute("ID", "2");
-
-                EnterSchool_identity2.SetAttribute("target", "入學身份:外加錄取--原住民生");
-
-                EnterSchool_identity2.SetAttribute("source", "");
-
-                EnterSchool_identity.AppendChild(EnterSchool_identity2);
-
-                XmlElement EnterSchool_identity3 = EnterSchool_identity.OwnerDocument.CreateElement("item");
-
-                EnterSchool_identity3.SetAttribute("ID", "3");
-
-                EnterSchool_identity3.SetAttribute("target", "入學身份:外加錄取--身心障礙生");
-
-                EnterSchool_identity3.SetAttribute("source", "");
-
-                EnterSchool_identity.AppendChild(EnterSchool_identity3);
-
-                XmlElement EnterSchool_identity4 = EnterSchool_identity.OwnerDocument.CreateElement("item");
-
-                EnterSchool_identity4.SetAttribute("ID", "4");
-
-                EnterSchool_identity4.SetAttribute("target", "入學身份:外加錄取--其他");
-
-                EnterSchool_identity4.SetAttribute("source", "");
-
-                EnterSchool_identity.AppendChild(EnterSchool_identity4);
-
-                config.AppendChild(EnterSchool_identity);
-                #endregion
-
-                #region 3.新生中具原住民身分者
-                XmlElement FreshMenWith_Aboriginal_Identity = config.OwnerDocument.CreateElement("新生中具原住民身分者");
-
-                XmlElement FreshMenWith_Aboriginal_Identity1 = FreshMenWith_Aboriginal_Identity.OwnerDocument.CreateElement("item");
-
-                FreshMenWith_Aboriginal_Identity1.SetAttribute("ID", "1");
-
-                FreshMenWith_Aboriginal_Identity1.SetAttribute("target", "新生中具原住民身分者");
-
-                FreshMenWith_Aboriginal_Identity1.SetAttribute("source", "");
-
-                FreshMenWith_Aboriginal_Identity.AppendChild(FreshMenWith_Aboriginal_Identity1);
-
-                config.AppendChild(FreshMenWith_Aboriginal_Identity);
-                #endregion
-
-                cd.SetXml("XmlData", config);
-
-                #endregion
-            }
-            cd.Save();
+            //config為null(尚無設定)時維持原行為：不填入表格(FetchConfigXml()已負責建立並儲存預設設定檔供下次使用)
         }
 
         ////Column2的選單產生  (1.入學方式)
@@ -329,12 +385,18 @@ namespace myTable
 
         //入學方式、入學身分、新生中具原住民身分者 來源欄位填值
         // 來源的選擇 是取 所有屬於 "學生" 的"類別"
-        private void Column3Prepare()
+        // 查詢所有屬於"學生"的"類別"標籤，屬於伺服器存取，於背景執行緒呼叫
+        private DataTable FetchColumn3Data()
+        {
+            QueryHelper _Q = new QueryHelper();
+            return _Q.Select("select * from tag where category='Student' order by prefix,name");
+        }
+
+        // 依 FetchColumn3Data() 取得的標籤資料建立來源選單，須於UI執行緒呼叫
+        private void ApplyColumn3Data(DataTable dt)
         {
             _column3Items = new Dictionary<String, String>();
-            QueryHelper _Q = new QueryHelper();
 
-            DataTable dt = _Q.Select("select * from tag where category='Student' order by prefix,name");
             foreach (DataRow row in dt.Rows)
             {
                 String id = row["id"].ToString();
@@ -2412,7 +2474,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 dataGridViewX1.Rows.Clear();  //清除datagridview資料
 
                 //LoadLastRecord(); //再次讀入Mapping設定
-                LoadConfigXml();
+                ApplyConfigXml(FetchConfigXml());
             }
             catch
             {
