@@ -133,4 +133,7 @@
   <data name="template_112_7_ver_" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\template(112.7 ver).xls;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="新生入學方式統計表_樣板" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\新生入學方式統計表_樣板.xlsx;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>

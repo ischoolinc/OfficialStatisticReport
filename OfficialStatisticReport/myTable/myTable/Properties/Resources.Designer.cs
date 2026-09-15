@@ -109,5 +109,15 @@ namespace myTable.Properties {
                 return ((byte[])(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] 新生入學方式統計表_樣板 {
+            get {
+                object obj = ResourceManager.GetObject("新生入學方式統計表_樣板", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }

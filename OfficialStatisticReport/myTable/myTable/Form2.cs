@@ -13,7 +13,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
-using SmartSchool.Feature.Basic;
 using K12.Data.Configuration;
 
 namespace myTable
@@ -55,31 +54,10 @@ namespace myTable
 
             SchoolYearItem();
 
-            //LoadLastRecord(); //舊CODE 方法，不再使用，故註解。
-
             LoadConfigXml();
-
-            LoadClassTypeCodeDic();
+            
         }
 
-        private void LoadClassTypeCodeDic()
-        {
-            //_ClassTypeCodeDic.Clear();
-            //_ClassTypeCodeDic.Add("1", "日間部");
-            //_ClassTypeCodeDic.Add("2", "夜間部");
-            //_ClassTypeCodeDic.Add("3", "實用技能學程(一般班)");
-            //_ClassTypeCodeDic.Add("4", "建教班");
-            //_ClassTypeCodeDic.Add("6", "產學訓合作計畫班(產學合作班)");
-            //_ClassTypeCodeDic.Add("7", "重點產業班/台德菁英班/雙軌旗艦訓練計畫專班");
-            //_ClassTypeCodeDic.Add("8", "建教僑生專班");
-            //_ClassTypeCodeDic.Add("9", "實驗班");
-            //_ClassTypeCodeDic.Add("01", "進修部(核定班)");
-            //_ClassTypeCodeDic.Add("02", "編制班");
-            //_ClassTypeCodeDic.Add("03", "自給自足班");
-            //_ClassTypeCodeDic.Add("04", "員工進修班");
-            //_ClassTypeCodeDic.Add("05", "重點產業班");
-            //_ClassTypeCodeDic.Add("06", "產業人力套案專班");
-        }
         private void LoadConfigXml()
         {
             ConfigData cd = K12.Data.School.Configuration["新生入學統計報表_來源目標設定Config"];
@@ -296,27 +274,7 @@ namespace myTable
 
         ////Column2的選單產生  (1.入學方式)
         private void Column2Prepare()
-        {
-            //List<String> prefix = new List<string>();
-            //List<String> name = new List<string>();
-            //prefix.Add("甄選入學");
-            //prefix.Add("申請入學");
-            //prefix.Add("登記分發");
-            //prefix.Add("直升入學");
-            //prefix.Add("免試入學");
-            //prefix.Add("其他");
-            //name.Add("一般生");
-            //name.Add("原住民生");
-            //name.Add("身心障礙生");
-            //name.Add("其他");
-
-            //foreach (String a in prefix)
-            //{
-            //    foreach (String b in name)
-            //    {
-            //        Column2.Items.Add(a + ":" + b);
-            //    }
-            //}
+        {            
 
             Column2.Items.Add("入學方式:免試入學--校內直升");
             Column2.Items.Add("入學方式:免試入學--優先免試");
@@ -397,8 +355,7 @@ namespace myTable
                     MessageBox.Show("網路或資料庫異常,請稍後再試...");
                     this.buttonX1.Enabled = true;
                     this.linkLabel1.Enabled = true;
-                    this.dataGridViewX1.Enabled = true;
-                    this.comboBoxEx1.Enabled = true;
+                    this.dataGridViewX1.Enabled = true;                    
                     this.comboBoxEx2.Enabled = true;
                 }
             }
@@ -581,13 +538,12 @@ namespace myTable
 
         void DataSetting()
         {
-            dept = this.comboBoxEx1.Text;
+            
             _SchoolYear = comboBoxEx2.Text;
             FISCA.Presentation.MotherForm.SetStatusBarMessage("正在產生新生入學方式統計表...");
             this.buttonX1.Enabled = false;
             this.linkLabel1.Enabled = false;
-            this.dataGridViewX1.Enabled = false;
-            this.comboBoxEx1.Enabled = false;
+            this.dataGridViewX1.Enabled = false;            
             this.comboBoxEx2.Enabled = false;
             _BGWClassStudentAbsenceDetail = new BackgroundWorker();
             _BGWClassStudentAbsenceDetail.DoWork += new DoWorkEventHandler(_BGWClassStudentAbsenceDetail_DoWork);
@@ -603,7 +559,7 @@ namespace myTable
             this.buttonX1.Enabled = true;
             this.linkLabel1.Enabled = true;
             this.dataGridViewX1.Enabled = true;
-            this.comboBoxEx1.Enabled = true;
+            
             this.comboBoxEx2.Enabled = true;
             FISCA.Presentation.MotherForm.SetStatusBarMessage("產生 新生入學方式統計表 已完成");
 
@@ -637,13 +593,7 @@ namespace myTable
             Dictionary<String, myStudent> myDic = new Dictionary<string, myStudent>();
             List<myStudent> mylist = new List<myStudent>();
             QueryHelper _Q = new QueryHelper();
-
-            //SQL查詢要求的年級資料
-            //DataTable dt = _Q.Select("select student.id,student.name,student.gender,student.permanent_address,student.ref_class_id,student.status,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id from student left join class on student.ref_class_id=class.id left join dept on class.ref_dept_id=dept.id left join tag_student on student.id= tag_student.ref_student_id where student.status in ('1','4','16') and class.grade_year='1'");
-
-            //2017/1/17 穎驊改寫修正， 上面的SQL 僅會抓取學生 所屬班級上的 科別 ，而不會抓學生身上自己設定的科別 ， 現在該改SQL，  優先先抓取學生自己的科別。 若無 則以 班級設定的科別帶入。
-            //2022-07-12 Cynthia  將新生異動的班別也讀出來 
-            //DataTable dt = _Q.Select("select student.id,student.name,student.gender,student.permanent_address,student.ref_class_id,student.status,student.ref_dept_id as student_ref_dept_id,class.ref_dept_id as class_ref_dept_id ,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id from student left join class on student.ref_class_id=class.id  left join dept on  case    when student.ref_dept_id is null   then class.ref_dept_id=dept.id   else student.ref_dept_id=dept.id  end left join tag_student on student.id= tag_student.ref_student_id where student.status in ('1','4','16') and class.grade_year='1'");
+         
             string sql = @"WITH update_record_info AS(
 	SELECT 
 		ref_student_id
@@ -797,40 +747,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
             Worksheet ws;
             Cells cs;
             int index, row;
-            _wk.Worksheets.Add();
-            ////該年級學生總表
-            //_wk.Worksheets.Add();
-            //ws = _wk.Worksheets[2];
-            //ws.Name = "All_List";
-            //cs = ws.Cells;
-            //cs["A1"].PutValue("ID");
-            //cs["B1"].PutValue("Name");
-            //cs["C1"].PutValue("Gender");
-            //cs["D1"].PutValue("Ref_Class_Id");
-            //cs["E1"].PutValue("Class_Name");
-            //cs["F1"].PutValue("Grade_Year");
-            //cs["G1"].PutValue("Dept_Name");
-            //cs["H1"].PutValue("ref_tag_id");
-            //index = 1;
-            //foreach (myStudent s in filter.clean_list)
-            //{
-            //    cs[index, 0].PutValue(s.Id);
-            //    cs[index, 1].PutValue(s.Name);
-            //    cs[index, 2].PutValue(s.Gender);
-            //    cs[index, 3].PutValue(s.Ref_class_id);
-            //    cs[index, 4].PutValue(s.Class_name);
-            //    cs[index, 5].PutValue(s.Grade_year);
-            //    cs[index, 6].PutValue(s.Dept_name);
-            //    String column7 = "";
-            //    foreach (String l in s.Tag)
-            //    {
-            //        column7 += l + ",";
-            //    }
-            //    cs[index, 7].PutValue(column7);
-            //    index++;
-            //}
-
-            //該科別異常的學生資料表
+            _wk.Worksheets.Add();            
 
 
             ws = _wk.Worksheets[1];
@@ -1128,8 +1045,9 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
             Workbook wk2 = new Workbook();
             //wk2.Open(new MemoryStream(Properties.Resources.template_105_7_ver_)); //開啟範本文件 // 2017/1/17 穎驊筆記，在此載入105/7 最新版
 
-            wk2.Open(new MemoryStream(Properties.Resources.template_112_7_ver_)); //開啟範本文件 // 2023/9/22 CT
+            //wk2.Open(new MemoryStream(Properties.Resources.template_112_7_ver_)); //開啟範本文件 // 2023/9/22 CT
 
+            wk2.Open(new MemoryStream(Properties.Resources.新生入學方式統計表_樣板)); //開啟範本文件 // 2026/9/15 CT
 
             _wk.Worksheets[0].Copy(wk2.Worksheets[0]); //複製範本文件
             ws = _wk.Worksheets[0];
@@ -1376,10 +1294,6 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 List<myStudent> EnterWaysTagID_Mapping_StudentList_collect__enter_identity_IEP_Student_list = new List<myStudent>();
 
                 List<myStudent> EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list = new List<myStudent>();
-
-
-
-
                 EnterWaysTagID_Mapping_StudentList_collect__enter_identity_normal_Student_list = filter.getListByTagId(EnterWaysTagID, enter_identity_normal_Student_list);
 
                 EnterWaysTagID_Mapping_StudentList_collect__enter_identity_aboriginal_Student_list = filter.getListByTagId(EnterWaysTagID, enter_identity_aboriginal_Student_list);
@@ -1402,9 +1316,6 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 cs[38, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "1")); //入學身份:外加錄取--其他 男生總數 in EnterWayTagsID_Mapping_List
                 cs[38, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "0")); //入學身份:外加錄取--其他 女生總數 in EnterWayTagsID_Mapping_List
 
-
-
-
                 if (col == 9)
                 {
                     col = 12;
@@ -1424,49 +1335,6 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 }
             }
 
-
-
-
-            ////收集原住民生
-            //foreach (KeyValuePair<String, List<String>> k in table2Left)
-            //{
-            //    if (k.Key == "原住民生")
-            //    {
-            //        AboList = k.Value; //收入TagID
-            //    }
-            //}
-
-            //index = 32;
-            //foreach (KeyValuePair<String, List<String>> k in table2Left)
-            //{
-            //    List<myStudent> list = new List<myStudent>();
-            //    list = filter.getListByTagId(k.Value, summary);
-
-            //    cs[index, 4].PutValue(list.Count);
-            //    cs[index, 6].PutValue(filter.getGenderCount(list, "1"));
-            //    cs[index, 8].PutValue(filter.getGenderCount(list, "0"));
-            //    index++;
-            //}
-
-
-            ////Table2 Right
-            //index = 32;
-            //row = 10;
-            //foreach (KeyValuePair<String, List<String>> map in _mappingData)
-            //{
-            //    if (index > 35) { index = 32; row += 2; } //換行換欄
-            //    if (map.Value.Count > 0)
-            //    {
-            //        List<myStudent> list = new List<myStudent>();
-            //        list = filter.getListByTagId(map.Value, summary);
-
-            //        cs[index, row].PutValue(filter.getGenderCount(list, "1"));
-            //        cs[index, row + 1].PutValue(filter.getGenderCount(list, "0"));
-            //    }
-            //    index++;
-
-
-            //}
 
             #region 按國中畢/修業年度分
             //Table3 Left
@@ -1654,125 +1522,15 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
             cs[50, 7].PutValue(filter.getGenderCount(collect__abo_LastOther, "1")); //新生具有原住民身分者其他種入學男生總數
             cs[50, 8].PutValue(filter.getGenderCount(collect__abo_LastOther, "0")); //新生具有原住民身分者其他種入學女生總數
 
-
-
-            //cs[36, 4].PutValue(collect__LastGradeT.Count); //應屆畢業總數
-            //cs[37, 4].PutValue(collect__LastGradeF.Count); //非應屆畢業總數
-            //cs[36, 6].PutValue(filter.getGenderCount(collect__LastGradeT, "1")); //應屆畢業男生總數
-            //cs[36, 8].PutValue(filter.getGenderCount(collect__LastGradeT, "0")); //應屆畢業女生總數
-            //cs[37, 6].PutValue(filter.getGenderCount(collect__LastGradeF, "1")); //非應屆畢業男生總數
-            //cs[37, 8].PutValue(filter.getGenderCount(collect__LastGradeF, "0")); //非應屆畢業女生總數 
             #endregion
-
-
-
-            ////Table3 Right
-            //Dictionary<String, List<String>> ndic = new Dictionary<string, List<string>>(); //為綜合入學方式,建立字典
-            //foreach (KeyValuePair<String, List<String>> map in _mappingData)
-            //{
-            //    String key = map.Key.Substring(0, 2); //建立key為前面兩個字串:甄選,申請,登記,直升,免試,其他
-            //    if (!ndic.ContainsKey(key))
-            //    {
-            //        ndic.Add(key, new List<string>()); //key不存在即建立
-            //    }
-            //    foreach (String s in map.Value)
-            //    {
-            //        if (map.Key.Contains(key)) //針對符合的key做TagID的收集
-            //        {
-            //            ndic[key].Add(s);
-            //        }
-            //    }
-            //}
-
-            //index = 36;
-            //row = 10;
-            //foreach (KeyValuePair<String, List<String>> nmap in ndic)
-            //{
-            //    if (index > 36) { index = 36; row += 2; } //換行換欄
-            //    if (nmap.Value.Count == 0)  //遇到空值index++並繼續迴圈
-            //    {
-            //        index++;
-            //        continue;
-            //    }
-            //    List<myStudent> list = new List<myStudent>();
-            //    list = filter.getListByTagId(nmap.Value, summary); //收集符合TagID的學生物件
-            //    collect_List = new List<string>(); //清空之前的清單
-            //    collect__LastGradeT = new List<myStudent>(); //清空之前的清單
-            //    collect__LastGradeF = new List<myStudent>(); //清空之前的清單
-            //    foreach (myStudent student in list)
-            //    {
-            //        collect_List.Add(student.Id); //收集學生ID
-            //    }
-
-            //    recl = SHSchool.Data.SHBeforeEnrollment.SelectByStudentIDs(collect_List);
-            //    foreach (SHSchool.Data.SHBeforeEnrollmentRecord rec in recl)
-            //    {
-            //        foreach (myStudent student in list)
-            //        {
-            //            if (rec.RefStudentID == student.Id)
-            //            {
-            //                String last_grade_year = rec.GraduateSchoolYear;
-            //                if (last_grade_year == "") last_grade_year = "0";
-            //                int year = Convert.ToInt16(last_grade_year) + 1912;
-            //                if (year.ToString() == DateTime.Now.Year.ToString())
-            //                {
-            //                    collect__LastGradeT.Add(student); //收入應屆清單
-            //                }
-            //                else
-            //                {
-            //                    collect__LastGradeF.Add(student); //收入非應屆清單
-            //                }
-            //            }
-            //        }
-            //    }
-            //    cs[index, row].PutValue(filter.getGenderCount(collect__LastGradeT, "1")); //應屆男生數
-            //    cs[index, row + 1].PutValue(filter.getGenderCount(collect__LastGradeT, "0")); //應屆女生數
-            //    cs[index + 1, row].PutValue(filter.getGenderCount(collect__LastGradeF, "1")); //非應屆男生數
-            //    cs[index + 1, row + 1].PutValue(filter.getGenderCount(collect__LastGradeF, "0")); //非應屆女生數
-            //    index++; //換行
-            //}
-
-            ////Table3 End
-            //collect_List = new List<string>(); //清空之前的清單
-            //collect__LastGradeT = new List<myStudent>(); //清空之前的清單
-            //collect__LastGradeF = new List<myStudent>(); //清空之前的清單
-            //List<myStudent> AboStudent = filter.getListByTagId(AboList, summary);
-            //foreach (myStudent student in AboStudent)
-            //{
-            //    collect_List.Add(student.Id);
-            //}
-            //recl = SHSchool.Data.SHBeforeEnrollment.SelectByStudentIDs(collect_List);
-            //foreach (SHSchool.Data.SHBeforeEnrollmentRecord rec in recl)
-            //{
-            //    foreach (myStudent student in AboStudent)
-            //    {
-            //        if (rec.RefStudentID == student.Id)
-            //        {
-            //            String last_grade_year = rec.GraduateSchoolYear;
-            //            if (last_grade_year == "") last_grade_year = "0";
-            //            int year = Convert.ToInt16(last_grade_year) + 1912;
-            //            if (year.ToString() == DateTime.Now.Year.ToString())
-            //            {
-            //                collect__LastGradeT.Add(student); //收入應屆清單
-            //            }
-            //            else
-            //            {
-            //                collect__LastGradeF.Add(student); //收入非應屆清單
-            //            }
-            //        }
-            //    }
-            //}
-
-            //cs[36, 22].PutValue(filter.getGenderCount(collect__LastGradeT, "1")); //應屆原住民男生數
-            //cs[36, 23].PutValue(filter.getGenderCount(collect__LastGradeT, "0")); //應屆原住民女生數
-            //cs[37, 22].PutValue(filter.getGenderCount(collect__LastGradeF, "1")); //非應屆原住民男生數
-            //cs[37, 23].PutValue(filter.getGenderCount(collect__LastGradeF, "0")); //非應屆原住民女生數
+                     
 
             List<myStudent> collect__LocalCounty = new List<myStudent>();  //戶籍位於本縣市
             List<myStudent> collect__OtherCounty = new List<myStudent>();  //戶籍非位於本縣市
 
             #region 按戶籍地分
-            XmlElement Element = Config.GetSchoolInfo();
+            XmlElement Element = null;
+            //XmlElement Element = Config.GetSchoolInfo();
 
             string LocalCounty = getNodeData("County", Element, "SchoolInformation");
 
@@ -2527,7 +2285,10 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
             return value;
         }
 
-
+        private void Form2_Load(object sender, EventArgs e)
+        {
+            this.MaximumSize = this.MinimumSize = this.Size;
+        }
     }
 
 }
