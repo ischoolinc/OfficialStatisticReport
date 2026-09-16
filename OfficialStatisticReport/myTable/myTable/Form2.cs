@@ -69,99 +69,12 @@ namespace myTable
             //cd.SetXml("XmlData", config);
             //cd.Save();
 
-            if (config != null) //如果不是空的
-            {
-                XmlElement EnterSchool_Way = (XmlElement)config.SelectSingleNode("入學方式");
+            // 先清除既有列，避免重載時產生重複列
+            dataGridViewX1.Rows.Clear();
+            dataGridViewX2.Rows.Clear();
+            dataGridViewX3.Rows.Clear();
 
-                XmlElement EnterSchool_identity = (XmlElement)config.SelectSingleNode("入學身分");
-
-                XmlElement FreshMenWith_Aboriginal_Identity = (XmlElement)config.SelectSingleNode("新生中具原住民身分者");
-
-                XmlNodeList EnterSchool_WayList;
-
-                XmlNodeList EnterSchool_identityList;
-
-                XmlNodeList FreshMenWith_Aboriginal_IdentityList;
-
-                DataGridViewRow row;
-
-                if (EnterSchool_Way != null) //  Config內有設定才做讀取
-                {
-
-                    EnterSchool_WayList = EnterSchool_Way.SelectNodes("item");
-
-                    foreach (XmlElement item in EnterSchool_WayList)
-                    {
-                        row = new DataGridViewRow();
-                        row.CreateCells(dataGridViewX1);
-                        row.Cells[0].Value = item.HasAttribute("target") ? item.GetAttribute("target") : "";
-                        row.Cells[1].Value = item.HasAttribute("source") ? item.GetAttribute("source") : "";
-                        dataGridViewX1.Rows.Add(row);
-                    }
-                }
-                else
-                {
-                    //Config無資料則提供預設標記
-                    for (int i = 0; i < Column2.Items.Count; i++)
-                    {
-                        row = new DataGridViewRow();
-                        row.CreateCells(dataGridViewX1);
-                        row.Cells[0].Value = Column2.Items[i];//target
-                        dataGridViewX1.Rows.Add(row);
-                    }
-                }
-
-                if (EnterSchool_identity != null) //  Config內有設定才做讀取
-                {
-                    EnterSchool_identityList = EnterSchool_identity.SelectNodes("item");
-
-                    foreach (XmlElement item in EnterSchool_identityList)
-                    {
-                        row = new DataGridViewRow();
-                        row.CreateCells(dataGridViewX2);
-                        row.Cells[0].Value = item.HasAttribute("target") ? item.GetAttribute("target") : "";
-                        row.Cells[1].Value = item.HasAttribute("source") ? item.GetAttribute("source") : "";
-                        dataGridViewX2.Rows.Add(row);
-                    }
-                }
-                else
-                {
-                    //Config無資料則提供預設標記
-                    for (int i = 0; i < dataGridViewComboBoxExColumn1.Items.Count; i++)
-                    {
-                        row = new DataGridViewRow();
-                        row.CreateCells(dataGridViewX2);
-                        row.Cells[0].Value = dataGridViewComboBoxExColumn1.Items[i];//target
-                        dataGridViewX2.Rows.Add(row);
-                    }
-                }
-
-                if (FreshMenWith_Aboriginal_Identity != null) //  Config內有設定才做讀取
-                {
-                    FreshMenWith_Aboriginal_IdentityList = FreshMenWith_Aboriginal_Identity.SelectNodes("item");
-
-                    foreach (XmlElement item in FreshMenWith_Aboriginal_IdentityList)
-                    {
-                        row = new DataGridViewRow();
-                        row.CreateCells(dataGridViewX3);
-                        row.Cells[0].Value = item.HasAttribute("target") ? item.GetAttribute("target") : "";
-                        row.Cells[1].Value = item.HasAttribute("source") ? item.GetAttribute("source") : "";
-                        dataGridViewX3.Rows.Add(row);
-                    }
-                }
-                else
-                {
-                    //Config無資料則提供預設標記
-                    for (int i = 0; i < dataGridViewComboBoxExColumn3.Items.Count; i++)
-                    {
-                        row = new DataGridViewRow();
-                        row.CreateCells(dataGridViewX3);
-                        row.Cells[0].Value = dataGridViewComboBoxExColumn3.Items[i];//target
-                        dataGridViewX3.Rows.Add(row);
-                    }
-                }
-            }
-            else
+            if (config == null)
             {
                 #region 產生空白設定檔
 
@@ -201,6 +114,8 @@ namespace myTable
 
                     i++;
                 }
+
+                config.AppendChild(EnterSchool_Way);
                 #endregion
 
                 #region 2.入學身分
@@ -210,7 +125,7 @@ namespace myTable
 
                 EnterSchool_identity1.SetAttribute("ID", "1");
 
-                EnterSchool_identity1.SetAttribute("target", "入學身份:一般生(非外加錄取)");
+                EnterSchool_identity1.SetAttribute("target", "入學身分:一般生(非外加錄取)");
 
                 EnterSchool_identity1.SetAttribute("source", "");
 
@@ -220,7 +135,7 @@ namespace myTable
 
                 EnterSchool_identity2.SetAttribute("ID", "2");
 
-                EnterSchool_identity2.SetAttribute("target", "入學身份:外加錄取--原住民生");
+                EnterSchool_identity2.SetAttribute("target", "入學身分:外加錄取--原住民生");
 
                 EnterSchool_identity2.SetAttribute("source", "");
 
@@ -230,7 +145,7 @@ namespace myTable
 
                 EnterSchool_identity3.SetAttribute("ID", "3");
 
-                EnterSchool_identity3.SetAttribute("target", "入學身份:外加錄取--身心障礙生");
+                EnterSchool_identity3.SetAttribute("target", "入學身分:外加錄取--身心障礙生");
 
                 EnterSchool_identity3.SetAttribute("source", "");
 
@@ -240,7 +155,7 @@ namespace myTable
 
                 EnterSchool_identity4.SetAttribute("ID", "4");
 
-                EnterSchool_identity4.SetAttribute("target", "入學身份:外加錄取--其他");
+                EnterSchool_identity4.SetAttribute("target", "入學身分:外加錄取--其他");
 
                 EnterSchool_identity4.SetAttribute("source", "");
 
@@ -269,7 +184,85 @@ namespace myTable
 
                 #endregion
             }
+
+            // 一律以預設標記清單建立列，再依 Config 的 target 對應填入 source；
+            // Config 無有效 source 時，若來源清單有與標記完全同名的項目則自動填入。
+            BindConfigMappingsToGrid(
+                dataGridViewX1,
+                Column2.Items.Cast<string>(),
+                Column3.Items.Cast<string>(),
+                config,
+                "入學方式");
+            BindConfigMappingsToGrid(
+                dataGridViewX2,
+                dataGridViewComboBoxExColumn1.Items.Cast<string>(),
+                dataGridViewComboBoxExColumn2.Items.Cast<string>(),
+                config,
+                "入學身分");
+            BindConfigMappingsToGrid(
+                dataGridViewX3,
+                dataGridViewComboBoxExColumn3.Items.Cast<string>(),
+                dataGridViewComboBoxExColumn4.Items.Cast<string>(),
+                config,
+                "新生中具原住民身分者");
+
             cd.Save();
+        }
+
+        /// <summary>
+        /// 依預設標記清單建立 DataGridView 列，並以 Config 區段中 item 的 target 精確對應填入 source。
+        /// Config 有有效（非空白）source 時優先；否則若來源清單有與標記完全同名的項目則自動填入；否則 source 留空。
+        /// Config 不決定列數。
+        /// </summary>
+        private void BindConfigMappingsToGrid(
+            DataGridView grid,
+            IEnumerable<string> predefinedTargets,
+            IEnumerable<string> sourceItems,
+            XmlElement config,
+            string sectionName)
+        {
+            Dictionary<string, string> mappings = new Dictionary<string, string>();
+
+            if (config != null)
+            {
+                XmlElement section = (XmlElement)config.SelectSingleNode(sectionName);
+                if (section != null)
+                {
+                    foreach (XmlElement item in section.SelectNodes("item"))
+                    {
+                        string target = item.HasAttribute("target") ? item.GetAttribute("target") : "";
+                        string source = item.HasAttribute("source") ? item.GetAttribute("source") : "";
+
+                        if (!string.IsNullOrEmpty(target))
+                            mappings[target] = source;
+                    }
+                }
+            }
+
+            HashSet<string> sourceSet = new HashSet<string>(sourceItems, StringComparer.Ordinal);
+
+            foreach (string target in predefinedTargets)
+            {
+                string source = "";
+
+                if (mappings.ContainsKey(target) &&
+                    !string.IsNullOrWhiteSpace(mappings[target]))
+                {
+                    // Config 有有效 source，優先使用
+                    source = mappings[target];
+                }
+                else if (sourceSet.Contains(target))
+                {
+                    // Config 無有效 source；來源清單有完全同名項目則自動填入
+                    source = target;
+                }
+
+                DataGridViewRow row = new DataGridViewRow();
+                row.CreateCells(grid);
+                row.Cells[0].Value = target;
+                row.Cells[1].Value = source;
+                grid.Rows.Add(row);
+            }
         }
 
         ////Column2的選單產生  (1.入學方式)
@@ -323,10 +316,10 @@ namespace myTable
         //// 2.入學身分
         private void dataGridViewComboBoxExColumn2Prepare()
         {
-            dataGridViewComboBoxExColumn1.Items.Add("入學身份:一般生(非外加錄取)");
-            dataGridViewComboBoxExColumn1.Items.Add("入學身份:外加錄取--原住民生");
-            dataGridViewComboBoxExColumn1.Items.Add("入學身份:外加錄取--身心障礙生");
-            dataGridViewComboBoxExColumn1.Items.Add("入學身份:外加錄取--其他");
+            dataGridViewComboBoxExColumn1.Items.Add("入學身分:一般生(非外加錄取)");
+            dataGridViewComboBoxExColumn1.Items.Add("入學身分:外加錄取--原住民生");
+            dataGridViewComboBoxExColumn1.Items.Add("入學身分:外加錄取--身心障礙生");
+            dataGridViewComboBoxExColumn1.Items.Add("入學身分:外加錄取--其他");
         }
 
         //3.新生中具原住民身分者
@@ -958,12 +951,12 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
 
 
             #region 2.入學身分 TagID 整理
-            // 入學身份:一般生(非外加錄取) ，所標記類別 tag ID List
+            // 入學身分:一般生(非外加錄取) ，所標記類別 tag ID List
             List<string> enter_identity_normal_ID_list = new List<string>();
 
             foreach (KeyValuePair<String, List<String>> map in XML_mappingData)
             {
-                if ("" + map.Key == "入學身份:一般生(非外加錄取)")
+                if ("" + map.Key == "入學身分:一般生(非外加錄取)")
                 {
                     foreach (String s in map.Value)
                     {
@@ -972,12 +965,12 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 }
             }
 
-            // 入學身份:外加錄取--原住民生 ，所標記類別 tag ID List
+            // 入學身分:外加錄取--原住民生 ，所標記類別 tag ID List
             List<string> enter_identity_aboriginal_ID_list = new List<string>();
 
             foreach (KeyValuePair<String, List<String>> map in XML_mappingData)
             {
-                if ("" + map.Key == "入學身份:外加錄取--原住民生")
+                if ("" + map.Key == "入學身分:外加錄取--原住民生")
                 {
                     foreach (String s in map.Value)
                     {
@@ -986,12 +979,12 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 }
             }
 
-            // 入學身份:外加錄取--身心障礙生 ，所標記類別 tag ID List
+            // 入學身分:外加錄取--身心障礙生 ，所標記類別 tag ID List
             List<string> enter_identity_IEP_ID_list = new List<string>();
 
             foreach (KeyValuePair<String, List<String>> map in XML_mappingData)
             {
-                if ("" + map.Key == "入學身份:外加錄取--身心障礙生")
+                if ("" + map.Key == "入學身分:外加錄取--身心障礙生")
                 {
                     foreach (String s in map.Value)
                     {
@@ -1001,12 +994,12 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
             }
 
 
-            // 入學身份:外加錄取--其他 ，所標記類別 tag ID List
+            // 入學身分:外加錄取--其他 ，所標記類別 tag ID List
             List<string> enter_identity_Other_list = new List<string>();
 
             foreach (KeyValuePair<String, List<String>> map in XML_mappingData)
             {
-                if ("" + map.Key == "入學身份:外加錄取--其他")
+                if ("" + map.Key == "入學身分:外加錄取--其他")
                 {
                     foreach (String s in map.Value)
                     {
@@ -1244,41 +1237,41 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
 
 
 
-            // 入學身份:一般生(非外加錄取) ，Student List           
+            // 入學身分:一般生(非外加錄取) ，Student List           
             List<myStudent> enter_identity_normal_Student_list = new List<myStudent>();
             enter_identity_normal_Student_list = filter.getListByTagId(enter_identity_normal_ID_list, summary);
 
-            // 入學身份:外加錄取--原住民生 ，Student List           
+            // 入學身分:外加錄取--原住民生 ，Student List           
             List<myStudent> enter_identity_aboriginal_Student_list = new List<myStudent>();
             enter_identity_aboriginal_Student_list = filter.getListByTagId(enter_identity_aboriginal_ID_list, summary);
 
-            // 入學身份:外加錄取--身心障礙生 ，Student List           
+            // 入學身分:外加錄取--身心障礙生 ，Student List           
             List<myStudent> enter_identity_IEP_Student_list = new List<myStudent>();
             enter_identity_IEP_Student_list = filter.getListByTagId(enter_identity_IEP_ID_list, summary);
 
-            // 入學身份:外加錄取--其他 ，Student List           
+            // 入學身分:外加錄取--其他 ，Student List           
             List<myStudent> enter_identity_other_Student_list = new List<myStudent>();
             enter_identity_other_Student_list = filter.getListByTagId(enter_identity_Other_list, summary);
 
             // 因為row 多加10個，往後加
 
-            cs[35, 6].PutValue(enter_identity_normal_Student_list.Count); //入學身份:一般生(非外加錄取)總數
-            cs[36, 6].PutValue(enter_identity_aboriginal_Student_list.Count); //入學身份:一般生(非外加錄取)總數
-            cs[37, 6].PutValue(enter_identity_IEP_Student_list.Count); //入學身份:一般生(非外加錄取)總數
-            cs[38, 6].PutValue(enter_identity_other_Student_list.Count); //入學身份:一般生(非外加錄取)總數
+            cs[35, 6].PutValue(enter_identity_normal_Student_list.Count); //入學身分:一般生(非外加錄取)總數
+            cs[36, 6].PutValue(enter_identity_aboriginal_Student_list.Count); //入學身分:一般生(非外加錄取)總數
+            cs[37, 6].PutValue(enter_identity_IEP_Student_list.Count); //入學身分:一般生(非外加錄取)總數
+            cs[38, 6].PutValue(enter_identity_other_Student_list.Count); //入學身分:一般生(非外加錄取)總數
 
 
-            cs[35, 7].PutValue(filter.getGenderCount(enter_identity_normal_Student_list, "1")); //入學身份:一般生(非外加錄取) 男生總數
-            cs[35, 8].PutValue(filter.getGenderCount(enter_identity_normal_Student_list, "0")); //入學身份:一般生(非外加錄取) 女生總數
+            cs[35, 7].PutValue(filter.getGenderCount(enter_identity_normal_Student_list, "1")); //入學身分:一般生(非外加錄取) 男生總數
+            cs[35, 8].PutValue(filter.getGenderCount(enter_identity_normal_Student_list, "0")); //入學身分:一般生(非外加錄取) 女生總數
 
-            cs[36, 7].PutValue(filter.getGenderCount(enter_identity_aboriginal_Student_list, "1")); // 入學身份:外加錄取--原住民生 男生總數
-            cs[36, 8].PutValue(filter.getGenderCount(enter_identity_aboriginal_Student_list, "0")); // 入學身份:外加錄取--原住民生 女生總數
+            cs[36, 7].PutValue(filter.getGenderCount(enter_identity_aboriginal_Student_list, "1")); // 入學身分:外加錄取--原住民生 男生總數
+            cs[36, 8].PutValue(filter.getGenderCount(enter_identity_aboriginal_Student_list, "0")); // 入學身分:外加錄取--原住民生 女生總數
 
-            cs[37, 7].PutValue(filter.getGenderCount(enter_identity_IEP_Student_list, "1")); //入學身份:外加錄取--身心障礙生 男生總數
-            cs[37, 8].PutValue(filter.getGenderCount(enter_identity_IEP_Student_list, "0")); //入學身份:外加錄取--身心障礙生 女生總數
+            cs[37, 7].PutValue(filter.getGenderCount(enter_identity_IEP_Student_list, "1")); //入學身分:外加錄取--身心障礙生 男生總數
+            cs[37, 8].PutValue(filter.getGenderCount(enter_identity_IEP_Student_list, "0")); //入學身分:外加錄取--身心障礙生 女生總數
 
-            cs[38, 7].PutValue(filter.getGenderCount(enter_identity_other_Student_list, "1")); //入學身份:外加錄取--其他 男生總數
-            cs[38, 8].PutValue(filter.getGenderCount(enter_identity_other_Student_list, "0")); //入學身份:外加錄取--其他 女生總數
+            cs[38, 7].PutValue(filter.getGenderCount(enter_identity_other_Student_list, "1")); //入學身分:外加錄取--其他 男生總數
+            cs[38, 8].PutValue(filter.getGenderCount(enter_identity_other_Student_list, "0")); //入學身分:外加錄取--其他 女生總數
 
             col = 9;
 
@@ -1304,17 +1297,17 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
 
                 // 因為row多加10個往後加
 
-                cs[35, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_normal_Student_list, "1")); //入學身份:一般生(非外加錄取) 男生總數 in EnterWayTagsID_Mapping_List
-                cs[35, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_normal_Student_list, "0")); //入學身份:一般生(非外加錄取) 女生總數 in EnterWayTagsID_Mapping_List
+                cs[35, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_normal_Student_list, "1")); //入學身分:一般生(非外加錄取) 男生總數 in EnterWayTagsID_Mapping_List
+                cs[35, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_normal_Student_list, "0")); //入學身分:一般生(非外加錄取) 女生總數 in EnterWayTagsID_Mapping_List
 
-                cs[36, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_aboriginal_Student_list, "1")); //入學身份:外加錄取--原住民生 男生總數 in EnterWayTagsID_Mapping_List
-                cs[36, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_aboriginal_Student_list, "0")); //入學身份:外加錄取--原住民生 女生總數 in EnterWayTagsID_Mapping_List
+                cs[36, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_aboriginal_Student_list, "1")); //入學身分:外加錄取--原住民生 男生總數 in EnterWayTagsID_Mapping_List
+                cs[36, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_aboriginal_Student_list, "0")); //入學身分:外加錄取--原住民生 女生總數 in EnterWayTagsID_Mapping_List
 
-                cs[37, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_IEP_Student_list, "1")); //入學身份:外加錄取--身心障礙生 男生總數 in EnterWayTagsID_Mapping_List
-                cs[37, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_IEP_Student_list, "0")); //入學身份:外加錄取--身心障礙生 女生總數 in EnterWayTagsID_Mapping_List
+                cs[37, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_IEP_Student_list, "1")); //入學身分:外加錄取--身心障礙生 男生總數 in EnterWayTagsID_Mapping_List
+                cs[37, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_IEP_Student_list, "0")); //入學身分:外加錄取--身心障礙生 女生總數 in EnterWayTagsID_Mapping_List
 
-                cs[38, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "1")); //入學身份:外加錄取--其他 男生總數 in EnterWayTagsID_Mapping_List
-                cs[38, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "0")); //入學身份:外加錄取--其他 女生總數 in EnterWayTagsID_Mapping_List
+                cs[38, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "1")); //入學身分:外加錄取--其他 男生總數 in EnterWayTagsID_Mapping_List
+                cs[38, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__enter_identity_other_Student_list, "0")); //入學身分:外加錄取--其他 女生總數 in EnterWayTagsID_Mapping_List
 
                 if (col == 9)
                 {
@@ -1949,7 +1942,7 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 config.AppendChild(EnterSchool_Way);
                 #endregion
 
-                #region 表2--入學身份 Xml 紀錄 儲存
+                #region 表2--入學身分 Xml 紀錄 儲存
                 XmlElement EnterSchool_identity = (XmlElement)config.SelectSingleNode("入學身分");
 
                 if (EnterSchool_identity != null) //  Config內有設定才做讀取
@@ -2215,13 +2208,37 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
         {
             try
             {
-                AccessHelper _A = new AccessHelper();
-                List<myTableUDT> UDTlist = _A.Select<myTableUDT>();
-                _A.DeletedValues(UDTlist); //清除UDT資料
-                dataGridViewX1.Rows.Clear();  //清除datagridview資料
+                // 重設僅還原畫面：清列、重載 Student Tag 來源、依同名自動對應；不讀舊 Config、不寫 Config
+                dataGridViewX1.Rows.Clear();
+                dataGridViewX2.Rows.Clear();
+                dataGridViewX3.Rows.Clear();
 
-                //LoadLastRecord(); //再次讀入Mapping設定
-                LoadConfigXml();
+                Column3.Items.Clear();
+                dataGridViewComboBoxExColumn2.Items.Clear();
+                dataGridViewComboBoxExColumn4.Items.Clear();
+
+                Column3Prepare();
+
+                BindConfigMappingsToGrid(
+                    dataGridViewX1,
+                    Column2.Items.Cast<string>(),
+                    Column3.Items.Cast<string>(),
+                    null,
+                    "入學方式");
+
+                BindConfigMappingsToGrid(
+                    dataGridViewX2,
+                    dataGridViewComboBoxExColumn1.Items.Cast<string>(),
+                    dataGridViewComboBoxExColumn2.Items.Cast<string>(),
+                    null,
+                    "入學身分");
+
+                BindConfigMappingsToGrid(
+                    dataGridViewX3,
+                    dataGridViewComboBoxExColumn3.Items.Cast<string>(),
+                    dataGridViewComboBoxExColumn4.Items.Cast<string>(),
+                    null,
+                    "新生中具原住民身分者");
             }
             catch
             {
