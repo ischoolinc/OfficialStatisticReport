@@ -38,6 +38,8 @@ namespace myTable
         // 列印效能診斷
         private StringBuilder _perfLog;
         private Stopwatch _perfTotalSw;
+        private List<string> _detailOverflowWarnings;
+
 
         //Dictionary<string, string> _ClassTypeCodeDic;
 
@@ -369,6 +371,7 @@ namespace myTable
         private void BeginPerfLog()
         {
             _perfLog = new StringBuilder();
+            _detailOverflowWarnings = new List<string>();
             _perfLog.AppendLine("============================================================");
             _perfLog.AppendLine("新生入學統計列印開始");
             _perfLog.AppendLine("SchoolYear=" + comboBoxEx2.Text);
@@ -653,6 +656,16 @@ namespace myTable
             {
                 FinishPerfLog(null);
             }
+
+            if (_detailOverflowWarnings != null && _detailOverflowWarnings.Count > 0)
+            {
+                MessageBox.Show(
+                    string.Join("\r\n\r\n", _detailOverflowWarnings) +
+                    "\r\n\r\n請確認樣板或資料分組是否需調整。",
+                    "明細列數超出樣板",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
         }
 
         private void _BGWClassStudentAbsenceDetail_DoWork(object sender, DoWorkEventArgs e)
@@ -684,7 +697,7 @@ SELECT
 student.id,student.name,student.gender,student.permanent_address,student.ref_class_id,student.status
 ,student.ref_dept_id as student_ref_dept_id,class.ref_dept_id as class_ref_dept_id 
 ,class.class_name,class.grade_year
-,dept.code as dept_code,dept.name as dept_name,dept_group.name as dept_group_name
+,dept.code as dept_code,dept.name as dept_name,dept_group.id as dept_group_id,dept_group.name as dept_group_name
 ,tag_student.ref_tag_id 
 , update_record_info.code
 , TRIM(update_record_info.Class_Type) AS Class_Type
@@ -717,6 +730,7 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
                     String grade_year = row["grade_year"].ToString();
                     String dept_code = row["dept_code"].ToString();
                     String dept_name = row["dept_name"].ToString();
+                    String dept_group_id = row["dept_group_id"].ToString();
                     String dept_group_name = row["dept_group_name"].ToString();
                     String classType = row["Class_Type"].ToString(); //班別
 
@@ -741,6 +755,7 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
 
                     myStudent studentObj = new myStudent(id, name, gender, ref_class_id, class_name, grade_year, dept_name, County, Before_School_Location, classType, new List<string>());
                     studentObj.Dept_code = dept_code;
+                    studentObj.Dept_group_id = dept_group_id;
                     studentObj.Dept_group_name = dept_group_name;
                     myDic.Add(id, studentObj);
                 }
@@ -798,7 +813,18 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
             sw.Restart();
             filter = new Filter(mylist, dept);
             AppendPerfLog("[8] new Filter(...)", sw.ElapsedMilliseconds);
+            AppendPerfCount("clean_list count", filter.clean_list.Count);
             AppendPerfCount("error_list count", filter.error_list.Count);
+            foreach (string sheetName in Filter.SupportedDeptGroupNames)
+            {
+                int sheetStudentCount = 0;
+                if (filter.ByDeptGroup != null && filter.ByDeptGroup.ContainsKey(sheetName))
+                {
+                    foreach (var g in filter.ByDeptGroup[sheetName])
+                        sheetStudentCount += g.Value.Count;
+                }
+                AppendPerfCount(sheetName + " students", sheetStudentCount);
+            }
 
             Export();
         }
@@ -1109,7 +1135,16 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
             WriteErrorSheet(_wk.Worksheets["異常資料表"]);
             AppendPerfLog("[10] WriteErrorSheet", sw.ElapsedMilliseconds);
 
+            sw.Restart();
+            Dictionary<string, GovApprovedAdmissionInfo> govApprovedData =
+                LoadGovApprovedAdmissionInfo(_SchoolYear);
+            AppendPerfLog("[10b] LoadGovApprovedAdmissionInfo", sw.ElapsedMilliseconds);
+            AppendPerfCount("GovApproved records", govApprovedData.Count);
+            Debug.WriteLine("核定招生資料學年度=" + _SchoolYear + "，筆數=" + govApprovedData.Count);
+
             int sheetPerfIndex = 11;
+            int govApprovedMatchedTotal = 0;
+            int govApprovedUnmatchedTotal = 0;
             foreach (string sheetName in Filter.SupportedDeptGroupNames)
             {
                 List<KeyValuePair<String, List<myStudent>>> groups = filter.GetSortedGroups(sheetName);
@@ -1118,6 +1153,8 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
                     studentCount += g.Value.Count;
 
                 sw.Restart();
+                int matchedCount;
+                int unmatchedCount;
                 WriteDepartmentSheet(
                     _wk.Worksheets[sheetName],
                     groups,
@@ -1127,12 +1164,22 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
                     enter_identity_aboriginal_ID_list,
                     enter_identity_IEP_ID_list,
                     enter_identity_Other_list,
-                    aboIDList);
+                    aboIDList,
+                    govApprovedData,
+                    out matchedCount,
+                    out unmatchedCount);
+                govApprovedMatchedTotal += matchedCount;
+                govApprovedUnmatchedTotal += unmatchedCount;
                 AppendPerfLog("[" + sheetPerfIndex + "] WriteDepartmentSheet - " + sheetName, sw.ElapsedMilliseconds);
                 AppendPerfCount("  groups", groups.Count);
                 AppendPerfCount("  students", studentCount);
+                AppendPerfCount("  govApproved matched", matchedCount);
+                AppendPerfCount("  govApproved unmatched", unmatchedCount);
                 sheetPerfIndex++;
             }
+            Debug.WriteLine(
+                "核定招生資料比對結果：matched=" + govApprovedMatchedTotal +
+                ", unmatched=" + govApprovedUnmatchedTotal);
         }
 
         private void WriteErrorSheet(Worksheet ws)
@@ -1161,13 +1208,24 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
             List<string> enter_identity_aboriginal_ID_list,
             List<string> enter_identity_IEP_ID_list,
             List<string> enter_identity_Other_list,
-            List<string> aboIDList)
+            List<string> aboIDList,
+            Dictionary<string, GovApprovedAdmissionInfo> govApprovedData,
+            out int matchedCount,
+            out int unmatchedCount)
         {
             Cells cs = ws.Cells;
             int index = 12;
+            // 新樣板明細區約 Excel 13~32（Aspose 12~31），超過則不寫入以免覆寫下方統計區
+            const int detailMaxRow = 31;
+            int skippedDetailGroups = 0;
             int col = 10;
             int flexInsex = 1;
             List<myStudent> summary = new List<myStudent>();
+            matchedCount = 0;
+            unmatchedCount = 0;
+
+            if (govApprovedData == null)
+                govApprovedData = new Dictionary<string, GovApprovedAdmissionInfo>();
 
             List<string> enter_Way_NoExam_SchoolPromote_ID_list = EnterWayTagsID_Mapping_List[0];
             List<string> enter_Way_NoExam_School_B1_ID_list = EnterWayTagsID_Mapping_List[1];
@@ -1184,23 +1242,63 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
             #region 每一科別+班別的整理 
             foreach (KeyValuePair<String, List<myStudent>> k in groups)
             {
+                foreach (myStudent s in k.Value)
+                {
+                    summary.Add(s); //展開dic_byDept,收集內容的myStudent物件（溢出時仍納入下方統計）
+                }
+
+                if (index > detailMaxRow)
+                {
+                    skippedDetailGroups++;
+                    AppendPerfCount("WARNING detail overflow skip group [" + ws.Name + "]", k.Key);
+                    continue;
+                }
+
                 string[] keyArray = k.Key.Split('⊕');
                 col = 10;
+                string deptCode = keyArray.Length >= 1 ? keyArray[0] : "";
+                string deptName = keyArray.Length >= 2 ? keyArray[1] : "";
+                string deptGroupId = "";
+                if (k.Value.Count > 0)
+                    deptGroupId = k.Value[0].Dept_group_id ?? "";
+
+                int approvedClassNum = 0;
+                int approvedStudentNum = 0;
+                string approvedKey = BuildGovApprovedKey(deptGroupId, deptCode, deptName);
+                GovApprovedAdmissionInfo approvedInfo;
+                if (govApprovedData.TryGetValue(approvedKey, out approvedInfo))
+                {
+                    approvedClassNum = approvedInfo.ClassNum;
+                    approvedStudentNum = approvedInfo.StudentNum;
+                    matchedCount++;
+                }
+                else
+                {
+                    unmatchedCount++;
+                    Debug.WriteLine(
+                        "核定招生資料未比對到：" +
+                        "DeptGroupId=" + deptGroupId +
+                        ", DeptCode=" + deptCode +
+                        ", DeptName=" + deptName);
+                }
+
                 //Table1 Left
-                cs[index, 1].PutValue(keyArray[0]); //科別代碼
-                cs[index, 2].PutValue(keyArray.Length >= 2 ? keyArray[1] : ""); //科別名稱
+                cs[index, 1].PutValue(deptCode); //科別代碼
+                cs[index, 2].PutValue(deptName); //科別名稱
                 if (keyArray.Length >= 3)
                     if (filter.ClassTypeCodeDic.ContainsKey(keyArray[2]))
                         cs[index, 3].PutValue(filter.ClassTypeCodeDic[keyArray[2]]); //班別名稱
-                cs[index, 6].PutValue(filter.getClassCount(k.Value)); //實際招生班數
-                cs[index, 7].PutValue(k.Value.Count); //學生總計數
+                // E：總班數 = 核定班數
+                cs[index, 4].PutValue(approvedClassNum);
+                // F：總學生數 = 核定人數
+                cs[index, 5].PutValue(approvedStudentNum);
+                // G：實際招生班數
+                cs[index, 6].PutValue(filter.getClassCount(k.Value));
+                // H：新生總計
+                cs[index, 7].PutValue(k.Value.Count);
                 cs[index, 8].PutValue(filter.getGenderCount(k.Value, "1")); //男生總數
                 cs[index, 9].PutValue(filter.getGenderCount(k.Value, "0")); //女生總數
 
-                foreach (myStudent s in k.Value)
-                {
-                    summary.Add(s); //展開dic_byDept,收集內容的myStudent物件
-                }
 
                 #region 學生 依入學11大方式 做的分類
                 //入學方式:免試入學--校內直升 ，Student List           
@@ -1338,6 +1436,17 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
 
                 index++; //每做完一次k.value即換行
             }
+
+            if (skippedDetailGroups > 0)
+            {
+                string msg =
+                    "工作表「" + ws.Name + "」科別/班別明細超過樣板可填列數（Excel 13~32，共 20 列）。" +
+                    "已略過 " + skippedDetailGroups + " 組明細寫入，避免覆寫下方統計區。" +
+                    "下方統計仍含全部學生。";
+                AppendPerfCount("WARNING detail overflow sheet [" + ws.Name + "] skipped/totalGroups", skippedDetailGroups + "/" + groups.Count);
+                if (_detailOverflowWarnings != null)
+                    _detailOverflowWarnings.Add(msg);
+            }
             #endregion
 
             //Table2 Left
@@ -1454,199 +1563,14 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
             }
 
 
-            #region 按國中畢/修業年度分
-            //Table3 Left
-
-            List<myStudent> collect__LastGrade = new List<myStudent>();  //應屆畢業的收集清單
-            List<myStudent> collect__LastComplete = new List<myStudent>();  //應屆結業的收集清單
-            List<myStudent> collect__LastOther = new List<myStudent>();  //應屆其他的收集清單
-
-            List<myStudent> collect__abo_LastGrade = new List<myStudent>();  //應屆畢業的收集清單
-            List<myStudent> collect__abo_LastComplete = new List<myStudent>();  //應屆結業的收集清單
-            List<myStudent> collect__abo_LastOther = new List<myStudent>();  //應屆其他的收集清單
-
-            List<myStudent> collect__LastGradeT = new List<myStudent>();  //應屆的收集清單
-            List<myStudent> collect__LastGradeF = new List<myStudent>();  //非應屆的收集清單
-
-
-            List<String> collect_List = new List<string>(); //收集學生ID的清單
-
-            foreach (myStudent student in summary) //收集summary所有學生ID
-            {
-                collect_List.Add(student.Id);
-            }
-
-            Dictionary<string, myStudent> summaryById = new Dictionary<string, myStudent>();
-            foreach (myStudent student in summary)
-            {
-                if (!summaryById.ContainsKey(student.Id))
-                    summaryById.Add(student.Id, student);
-            }
-
-            // 所有學生的異動資料
-            List<K12.Data.UpdateRecordRecord> UpdateRecord_records = K12.Data.UpdateRecord.SelectByStudentIDs(collect_List);
-
-            // 每位學生只計算一次前級畢/修業狀態
-            Dictionary<string, string> studentBeforeStatusMap = new Dictionary<string, string>();
-            foreach (myStudent student in summary)
-            {
-                if (!studentBeforeStatusMap.ContainsKey(student.Id))
-                    studentBeforeStatusMap[student.Id] = CheckStudentBeforeStatus(UpdateRecord_records, student.Id);
-            }
-
-            // 原住民清單與 rec 無關，移出迴圈只算一次
-            List<myStudent> aboStudentlist = filter.getListByTagId(aboIDList, summary);
-            Dictionary<string, myStudent> aboById = new Dictionary<string, myStudent>();
-            foreach (myStudent Ms in aboStudentlist)
-            {
-                if (!aboById.ContainsKey(Ms.Id))
-                    aboById.Add(Ms.Id, Ms);
-            }
-
-            //傳入學生ID清單供查詢
-            List<SHSchool.Data.SHBeforeEnrollmentRecord> recl = SHSchool.Data.SHBeforeEnrollment.SelectByStudentIDs(collect_List);
-            foreach (SHSchool.Data.SHBeforeEnrollmentRecord rec in recl)
-            {
-                myStudent student;
-                if (!summaryById.TryGetValue(rec.RefStudentID, out student))
-                    continue;
-
-                String last_grade_year = rec.GraduateSchoolYear;
-                if (last_grade_year == "") last_grade_year = "0"; //空值填方便後續計算
-
-                int year = Convert.ToInt16(last_grade_year);
-
-                string status;
-                if (!studentBeforeStatusMap.TryGetValue(student.Id, out status))
-                    status = "其他(含領結業證書)";
-
-                if ((year + 1).ToString() == K12.Data.School.DefaultSchoolYear)
-                {
-                    if (status == "當年畢業")
-                    {
-                        collect__LastGrade.Add(student);
-                    }
-                    if (status == "當年修業")
-                    {
-                        collect__LastComplete.Add(student);
-                    }
-                    if (status == "其他(含領結業證書)")
-                    {
-                        collect__LastOther.Add(student);
-                    }
-                }
-                else
-                {
-                    collect__LastOther.Add(student);
-                }
-
-                myStudent Ms;
-                if (aboById.TryGetValue(rec.RefStudentID, out Ms))
-                {
-                    if ((year + 1).ToString() == K12.Data.School.DefaultSchoolYear)
-                    {
-                        if (status == "當年畢業")
-                        {
-                            collect__abo_LastGrade.Add(Ms);
-                        }
-                        if (status == "當年修業")
-                        {
-                            collect__abo_LastComplete.Add(Ms);
-                        }
-                        if (status == "其他(含領結業證書)")
-                        {
-                            collect__abo_LastOther.Add(Ms);
-                        }
-                    }
-                    else
-                    {
-                        collect__abo_LastOther.Add(Ms);
-                    }
-                }
-            }
-
-
-            cs[39, 6].PutValue(collect__LastGrade.Count); //應屆畢業總數
-            cs[40, 6].PutValue(collect__LastComplete.Count); //應屆修業總數
-            cs[41, 6].PutValue(collect__LastOther.Count); //其他種入學
-
-            cs[39, 7].PutValue(filter.getGenderCount(collect__LastGrade, "1")); //應屆畢業男生總數
-            cs[39, 8].PutValue(filter.getGenderCount(collect__LastGrade, "0")); //應屆畢業女生總數
-
-            cs[40, 7].PutValue(filter.getGenderCount(collect__LastComplete, "1")); //應屆結業男生總數
-            cs[40, 8].PutValue(filter.getGenderCount(collect__LastComplete, "0")); //應屆結業女生總數
-
-            cs[41, 7].PutValue(filter.getGenderCount(collect__LastOther, "1")); //其他種入學男生總數
-            cs[41, 8].PutValue(filter.getGenderCount(collect__LastOther, "0")); //其他種入學女生總數
-
-
-
-            col = 9;
-
-            flexInsex = 1; //因為樣板不是每一項都是佔1格 ，有些有二合一合併，所以靠一個參數彈性調整
-
-            foreach (List<string> EnterWaysTagID in EnterWayTagsID_Mapping_List)
-            {
-                List<myStudent> EnterWaysTagID_Mapping_StudentList_collect__LastGrade = new List<myStudent>();
-
-                List<myStudent> EnterWaysTagID_Mapping_StudentList_collect__LastComplete = new List<myStudent>();
-
-                List<myStudent> EnterWaysTagID_Mapping_StudentList_collect__collect__LastOther = new List<myStudent>();
-
-                EnterWaysTagID_Mapping_StudentList_collect__LastGrade = filter.getListByTagId(EnterWaysTagID, collect__LastGrade);
-
-                EnterWaysTagID_Mapping_StudentList_collect__LastComplete = filter.getListByTagId(EnterWaysTagID, collect__LastComplete);
-
-                EnterWaysTagID_Mapping_StudentList_collect__collect__LastOther = filter.getListByTagId(EnterWaysTagID, collect__LastOther);
-
-                cs[39, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastGrade, "1")); //應屆畢業男生總數 in EnterWayTagsID_Mapping_List
-                cs[39, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastGrade, "0")); //應屆畢業女生總數 in EnterWayTagsID_Mapping_List
-
-                cs[40, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastComplete, "1")); //應屆結業男生總數 in EnterWayTagsID_Mapping_List
-                cs[40, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__LastComplete, "0")); //應屆結業女生總數 in EnterWayTagsID_Mapping_List
-
-                cs[41, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__collect__LastOther, "1")); //其他種入學男生總數 in EnterWayTagsID_Mapping_List
-                cs[41, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_collect__collect__LastOther, "0")); //其他種入學女生總數 in EnterWayTagsID_Mapping_List
-
-                if (col == 9)
-                {
-                    col = 12;
-                    flexInsex = 2;
-                }
-                else
-                {
-                    if (col == 44)
-                    {
-                        col = col + 3;
-                        flexInsex = 1;
-                    }
-                    else
-                    {
-                        col = col + 4;
-                    }
-                }
-            }
-
-            cs[48, 6].PutValue(collect__abo_LastGrade.Count); //新生具有原住民身分者應屆畢業總數
-            cs[49, 6].PutValue(collect__abo_LastComplete.Count); //新生具有原住民身分者應屆修業總數
-            cs[50, 6].PutValue(collect__abo_LastOther.Count); //新生具有原住民身分者其他種入學
-
-            cs[48, 7].PutValue(filter.getGenderCount(collect__abo_LastGrade, "1")); //新生具有原住民身分者應屆畢業男生總數
-            cs[48, 8].PutValue(filter.getGenderCount(collect__abo_LastGrade, "0")); //新生具有原住民身分者應屆畢業女生總數
-
-            cs[49, 7].PutValue(filter.getGenderCount(collect__abo_LastComplete, "1")); //新生具有原住民身分者應屆結業男生總數
-            cs[49, 8].PutValue(filter.getGenderCount(collect__abo_LastComplete, "0")); //新生具有原住民身分者應屆結業女生總數
-
-            cs[50, 7].PutValue(filter.getGenderCount(collect__abo_LastOther, "1")); //新生具有原住民身分者其他種入學男生總數
-            cs[50, 8].PutValue(filter.getGenderCount(collect__abo_LastOther, "0")); //新生具有原住民身分者其他種入學女生總數
-
-            #endregion
-                     
+            // 新樣板已移除「按國中畢/修業年度分」與「新生中具原住民身分者」區塊，停用舊樣板輸出（含資料準備與 PutValue），避免覆寫新版「按戶籍地分」等欄位。
+            // aboIDList 參數保留以維持呼叫端簽名相容；此處不再使用。
 
             List<myStudent> collect__LocalCounty = new List<myStudent>();  //戶籍位於本縣市
             List<myStudent> collect__OtherCounty = new List<myStudent>();  //戶籍非位於本縣市
 
             #region 按戶籍地分
+            // 新樣板位置：Excel row 40~41（Aspose 39~40）；舊樣板為 Excel 43~44（Aspose 42~43）
             XmlElement Element = null;
             //XmlElement Element = Config.GetSchoolInfo();
 
@@ -1664,14 +1588,14 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
                 }
             }
 
-            cs[42, 6].PutValue(collect__LocalCounty.Count); //戶籍位於本縣市
-            cs[43, 6].PutValue(collect__OtherCounty.Count); //戶籍非位於本縣市
+            cs[39, 6].PutValue(collect__LocalCounty.Count); //戶籍位於本縣市
+            cs[40, 6].PutValue(collect__OtherCounty.Count); //戶籍非位於本縣市
 
-            cs[42, 7].PutValue(filter.getGenderCount(collect__LocalCounty, "1")); //戶籍位於本縣市男生總數
-            cs[42, 8].PutValue(filter.getGenderCount(collect__LocalCounty, "0")); //戶籍位於本縣市女生總數
+            cs[39, 7].PutValue(filter.getGenderCount(collect__LocalCounty, "1")); //戶籍位於本縣市男生總數
+            cs[39, 8].PutValue(filter.getGenderCount(collect__LocalCounty, "0")); //戶籍位於本縣市女生總數
 
-            cs[43, 7].PutValue(filter.getGenderCount(collect__OtherCounty, "1")); //戶籍非位於本縣市男生總數
-            cs[43, 8].PutValue(filter.getGenderCount(collect__OtherCounty, "0")); //戶籍非位於本縣市女生總數 
+            cs[40, 7].PutValue(filter.getGenderCount(collect__OtherCounty, "1")); //戶籍非位於本縣市男生總數
+            cs[40, 8].PutValue(filter.getGenderCount(collect__OtherCounty, "0")); //戶籍非位於本縣市女生總數 
 
             col = 9;
 
@@ -1687,11 +1611,11 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
 
                 EnterWaysTagID_Mapping_StudentList_OtherCounty = filter.getListByTagId(EnterWaysTagID, collect__OtherCounty);
 
-                cs[42, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_LocalCounty, "1")); //戶籍位於本縣市男生總數 in EnterWayTagsID_Mapping_List
-                cs[42, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_LocalCounty, "0")); //戶籍位於本縣市女生總數 in EnterWayTagsID_Mapping_List
+                cs[39, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_LocalCounty, "1")); //戶籍位於本縣市男生總數 in EnterWayTagsID_Mapping_List
+                cs[39, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_LocalCounty, "0")); //戶籍位於本縣市女生總數 in EnterWayTagsID_Mapping_List
 
-                cs[43, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_OtherCounty, "1")); //戶籍非位於本縣市男生總數 in EnterWayTagsID_Mapping_List
-                cs[43, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_OtherCounty, "0")); //戶籍非位於本縣市女生總數 in EnterWayTagsID_Mapping_List
+                cs[40, col].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_OtherCounty, "1")); //戶籍非位於本縣市男生總數 in EnterWayTagsID_Mapping_List
+                cs[40, col + flexInsex].PutValue(filter.getGenderCount(EnterWaysTagID_Mapping_StudentList_OtherCounty, "0")); //戶籍非位於本縣市女生總數 in EnterWayTagsID_Mapping_List
 
                 if (col == 9)
                 {
@@ -1866,77 +1790,79 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
             #endregion
 
             #region 填值
-            cs[45, 6].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["總計"], "1")); // 總計 男
-            cs[46, 6].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["總計"], "0")); // 總計 女
+            // 新樣板位置：Excel row 43~44（Aspose 42~43）；舊樣板為 Excel 46~47（Aspose 45~46）
+            // 澎湖縣正確欄位為 AK（Aspose col 36）；舊碼誤寫 AU（46）會被「其他」覆寫
+            cs[42, 6].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["總計"], "1")); // 總計 男
+            cs[43, 6].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["總計"], "0")); // 總計 女
 
-            cs[45, 7].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新北市"], "1")); // 新北市 男
-            cs[46, 7].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新北市"], "0")); // 新北市 女
+            cs[42, 7].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新北市"], "1")); // 新北市 男
+            cs[43, 7].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新北市"], "0")); // 新北市 女
 
-            cs[45, 8].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺北市"], "1")); // 臺北市 男
-            cs[46, 8].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺北市"], "0")); // 臺北市 女
+            cs[42, 8].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺北市"], "1")); // 臺北市 男
+            cs[43, 8].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺北市"], "0")); // 臺北市 女
 
-            cs[45, 9].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺中市"], "1")); // 臺中市 男
-            cs[46, 9].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺中市"], "0")); // 臺中市 女
+            cs[42, 9].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺中市"], "1")); // 臺中市 男
+            cs[43, 9].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺中市"], "0")); // 臺中市 女
 
-            cs[45, 10].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺南市"], "1")); // 臺南市 男
-            cs[46, 10].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺南市"], "0")); // 臺南市 女
+            cs[42, 10].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺南市"], "1")); // 臺南市 男
+            cs[43, 10].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺南市"], "0")); // 臺南市 女
 
-            cs[45, 12].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["高雄市"], "1")); // 高雄市 男
-            cs[46, 12].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["高雄市"], "0")); // 高雄市 女
+            cs[42, 12].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["高雄市"], "1")); // 高雄市 男
+            cs[43, 12].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["高雄市"], "0")); // 高雄市 女
 
-            cs[45, 14].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["宜蘭縣"], "1")); // 宜蘭縣 男
-            cs[46, 14].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["宜蘭縣"], "0")); // 宜蘭縣 女
+            cs[42, 14].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["宜蘭縣"], "1")); // 宜蘭縣 男
+            cs[43, 14].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["宜蘭縣"], "0")); // 宜蘭縣 女
 
-            cs[45, 16].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["桃園市"], "1")); // 桃園市 男
-            cs[46, 16].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["桃園市"], "0")); // 桃園市 女
+            cs[42, 16].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["桃園市"], "1")); // 桃園市 男
+            cs[43, 16].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["桃園市"], "0")); // 桃園市 女
 
-            cs[45, 18].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹縣"], "1")); // 新竹縣 男
-            cs[46, 18].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹縣"], "0")); // 新竹縣 女
+            cs[42, 18].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹縣"], "1")); // 新竹縣 男
+            cs[43, 18].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹縣"], "0")); // 新竹縣 女
 
-            cs[45, 20].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["苗栗縣"], "1")); // 苗栗縣 男
-            cs[46, 20].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["苗栗縣"], "0")); // 苗栗縣 女
+            cs[42, 20].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["苗栗縣"], "1")); // 苗栗縣 男
+            cs[43, 20].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["苗栗縣"], "0")); // 苗栗縣 女
 
-            cs[45, 22].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["彰化縣"], "1")); // 彰化縣 男
-            cs[46, 22].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["彰化縣"], "0")); // 彰化縣 女
+            cs[42, 22].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["彰化縣"], "1")); // 彰化縣 男
+            cs[43, 22].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["彰化縣"], "0")); // 彰化縣 女
 
-            cs[45, 24].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["南投縣"], "1")); // 南投縣 男
-            cs[46, 24].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["南投縣"], "0")); // 南投縣 女
+            cs[42, 24].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["南投縣"], "1")); // 南投縣 男
+            cs[43, 24].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["南投縣"], "0")); // 南投縣 女
 
-            cs[45, 26].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["雲林縣"], "1")); // 雲林縣 男
-            cs[46, 26].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["雲林縣"], "0")); // 雲林縣 女
+            cs[42, 26].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["雲林縣"], "1")); // 雲林縣 男
+            cs[43, 26].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["雲林縣"], "0")); // 雲林縣 女
 
-            cs[45, 28].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義縣"], "1")); // 嘉義縣 男
-            cs[46, 28].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義縣"], "0")); // 嘉義縣 女
+            cs[42, 28].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義縣"], "1")); // 嘉義縣 男
+            cs[43, 28].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義縣"], "0")); // 嘉義縣 女
 
-            cs[45, 30].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["屏東縣"], "1")); // 屏東縣 男
-            cs[46, 30].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["屏東縣"], "0")); // 屏東縣 女
+            cs[42, 30].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["屏東縣"], "1")); // 屏東縣 男
+            cs[43, 30].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["屏東縣"], "0")); // 屏東縣 女
 
-            cs[45, 32].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺東縣"], "1")); // 臺東縣 男
-            cs[46, 32].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺東縣"], "0")); // 臺東縣 女
+            cs[42, 32].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺東縣"], "1")); // 臺東縣 男
+            cs[43, 32].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["臺東縣"], "0")); // 臺東縣 女
 
-            cs[45, 34].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["花蓮縣"], "1")); // 花蓮縣 男
-            cs[46, 34].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["花蓮縣"], "0")); // 花蓮縣 女
+            cs[42, 34].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["花蓮縣"], "1")); // 花蓮縣 男
+            cs[43, 34].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["花蓮縣"], "0")); // 花蓮縣 女
 
-            cs[45, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["澎湖縣"], "1")); // 澎湖縣 男
-            cs[46, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["澎湖縣"], "0")); // 澎湖縣 女
+            cs[42, 36].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["澎湖縣"], "1")); // 澎湖縣 男（AK）
+            cs[43, 36].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["澎湖縣"], "0")); // 澎湖縣 女（AK）
 
-            cs[45, 38].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["基隆市"], "1")); // 基隆市 男
-            cs[46, 38].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["基隆市"], "0")); // 基隆市 女
+            cs[42, 38].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["基隆市"], "1")); // 基隆市 男
+            cs[43, 38].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["基隆市"], "0")); // 基隆市 女
 
-            cs[45, 39].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹市"], "1")); // 新竹市 男
-            cs[46, 39].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹市"], "0")); // 新竹市 女
+            cs[42, 39].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹市"], "1")); // 新竹市 男
+            cs[43, 39].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["新竹市"], "0")); // 新竹市 女
 
-            cs[45, 40].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義市"], "1")); // 嘉義市 男
-            cs[46, 40].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義市"], "0")); // 嘉義市 女
+            cs[42, 40].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義市"], "1")); // 嘉義市 男
+            cs[43, 40].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["嘉義市"], "0")); // 嘉義市 女
 
-            cs[45, 42].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["金門縣"], "1")); // 金門縣 男
-            cs[46, 42].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["金門縣"], "0")); // 金門縣 女
+            cs[42, 42].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["金門縣"], "1")); // 金門縣 男
+            cs[43, 42].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["金門縣"], "0")); // 金門縣 女
 
-            cs[45, 44].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["連江縣"], "1")); // 連江縣 男
-            cs[46, 44].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["連江縣"], "0")); // 連江縣 女
+            cs[42, 44].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["連江縣"], "1")); // 連江縣 男
+            cs[43, 44].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["連江縣"], "0")); // 連江縣 女
 
-            cs[45, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["其他"], "1")); // 其他 男
-            cs[46, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["其他"], "0")); // 其他 女  
+            cs[42, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["其他"], "1")); // 其他 男（AU）
+            cs[43, 46].PutValue(filter.getGenderCount(Collect_BeforeSchoolLocationList["其他"], "0")); // 其他 女（AU）
 
             #endregion
 
@@ -1945,7 +1871,76 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
             cs["U5"].PutValue(_SchoolYear);
         }
 
+        private string BuildGovApprovedKey(
+            string deptGroupId,
+            string deptCode,
+            string deptName)
+        {
+            return
+                (deptGroupId ?? "").Trim() + "⊕" +
+                (deptCode ?? "").Trim() + "⊕" +
+                (deptName ?? "").Trim();
+        }
 
+        private Dictionary<string, GovApprovedAdmissionInfo> LoadGovApprovedAdmissionInfo(string schoolYear)
+        {
+            Dictionary<string, GovApprovedAdmissionInfo> result =
+                new Dictionary<string, GovApprovedAdmissionInfo>();
+
+            if (string.IsNullOrEmpty(schoolYear))
+                return result;
+
+            string sql = @"
+SELECT
+    deptgroup,
+    dept_code,
+    dept_name,
+    classnum,
+    studentnum,
+    schoolyear
+FROM $campus.updaterecord.govapprovednumofclass
+WHERE schoolyear::text = '{0}'
+ORDER BY
+    deptgroup,
+    dept_code,
+    dept_name
+";
+            sql = string.Format(sql, schoolYear.Replace("'", "''"));
+
+            QueryHelper q = new QueryHelper();
+            DataTable dt = q.Select(sql);
+
+            foreach (DataRow row in dt.Rows)
+            {
+                string deptGroupId = ("" + row["deptgroup"]).Trim();
+                string deptCode = ("" + row["dept_code"]).Trim();
+                string deptName = ("" + row["dept_name"]).Trim();
+                string key = BuildGovApprovedKey(deptGroupId, deptCode, deptName);
+
+                int classNum = 0;
+                int studentNum = 0;
+                int.TryParse(("" + row["classnum"]).Trim(), out classNum);
+                int.TryParse(("" + row["studentnum"]).Trim(), out studentNum);
+
+                if (result.ContainsKey(key))
+                {
+                    Debug.WriteLine(
+                        "核定招生資料重複鍵覆寫：" + key +
+                        "（schoolyear=" + schoolYear + "）");
+                }
+
+                result[key] = new GovApprovedAdmissionInfo
+                {
+                    DeptGroupId = deptGroupId,
+                    DeptCode = deptCode,
+                    DeptName = deptName,
+                    ClassNum = classNum,
+                    StudentNum = studentNum
+                };
+            }
+
+            return result;
+        }
 
         public void SaveMappingRecord() //儲存上次Mapping紀錄
         {
@@ -2446,6 +2441,15 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
         }
     }
 
+    class GovApprovedAdmissionInfo
+    {
+        public string DeptGroupId { get; set; }
+        public string DeptCode { get; set; }
+        public string DeptName { get; set; }
+
+        public int ClassNum { get; set; }
+        public int StudentNum { get; set; }
+    }
 }
 
 

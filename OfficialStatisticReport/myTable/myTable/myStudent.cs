@@ -9,7 +9,7 @@ namespace myTable
     class myStudent
     {
         //學生物件存放個資料
-        private String id, name, gender, ref_class_id, class_name, grade_year, dept_name, dept_code, dept_group_name, county, before_school_location, class_type;
+        private String id, name, gender, ref_class_id, class_name, grade_year, dept_name, dept_code, dept_group_id, dept_group_name, county, before_school_location, class_type;
 
         
         private List<String> tag;
@@ -24,6 +24,7 @@ namespace myTable
             this.grade_year = grade_year;
             this.dept_name = dept_name;
             this.dept_code = "";
+            this.dept_group_id = "";
             this.dept_group_name = "";
             this.county = county;
             this.before_school_location = before_school_location;
@@ -78,6 +79,12 @@ namespace myTable
         {
             get { return dept_code; }
             set { dept_code = value; }
+        }
+
+        public String Dept_group_id
+        {
+            get { return dept_group_id; }
+            set { dept_group_id = value; }
         }
 
         public String Dept_group_name

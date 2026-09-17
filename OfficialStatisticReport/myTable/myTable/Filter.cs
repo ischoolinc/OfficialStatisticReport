@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -48,24 +49,73 @@ namespace myTable
             return SupportedDeptGroupNames.Contains(deptGroupName);
         }
 
+        /// <summary>
+        /// 將資料庫 dept_group.name 轉換為報表工作表部別名稱。
+        /// 無法對應時回傳空字串（視為異常資料）。
+        /// </summary>
+        private static string GetReportDeptGroupName(string deptGroupName)
+        {
+            if (string.IsNullOrWhiteSpace(deptGroupName))
+                return "";
+
+            switch (deptGroupName.Trim())
+            {
+                case "普通型高中":
+                case "普通科":
+                    return "普通科";
+
+                case "技術型高中":
+                case "專業群科(職業科)":
+                    return "專業群科(職業科)";
+
+                case "綜合高中":
+                    return "綜合高中";
+
+                case "實用技能學程":
+                    return "實用技能學程";
+
+                case "進修部(學校)":
+                    return "進修部(學校)";
+
+                default:
+                    return "";
+            }
+        }
+
         //清除總資料異常,正確資料放clean_list,錯誤資料放error_list
         private void Cleaner(List<myStudent> list)
         {
             error_list = new List<myStudent>();
             clean_list = new List<myStudent>();
+            HashSet<string> loggedRawMappings = new HashSet<string>();
+
             foreach (myStudent s in list)
             {
                 //2022-07-13 Cynthia 班別不在對照內，放到錯誤清單
                 //2026-09-16 部別/科別代碼缺失或部別無法對應報表工作表，放到錯誤清單
-                if (s.Id == "" || s.Name == "" || (s.Gender != "0" && s.Gender != "1") || s.Ref_class_id == "" || s.Class_name == "" || s.Grade_year == "" || s.Dept_name == "" || string.IsNullOrEmpty(s.Dept_code) || !IsSupportedDeptGroup(s.Dept_group_name) || !ClassTypeCodeDic.ContainsKey(s.Class_Type))
+                //2026-09-17 先將資料庫部別名稱轉換為報表工作表名稱再驗證
+                string reportDeptGroupName = GetReportDeptGroupName(s.Dept_group_name);
+
+                string rawKey = s.Dept_group_name ?? "";
+                if (!loggedRawMappings.Contains(rawKey))
+                {
+                    loggedRawMappings.Add(rawKey);
+                    Debug.WriteLine("DeptGroup raw: " + rawKey + " -> " + (string.IsNullOrEmpty(reportDeptGroupName) ? "(unmapped)" : reportDeptGroupName));
+                }
+
+                if (s.Id == "" || s.Name == "" || (s.Gender != "0" && s.Gender != "1") || s.Ref_class_id == "" || s.Class_name == "" || s.Grade_year == "" || s.Dept_name == "" || string.IsNullOrEmpty(s.Dept_code) || string.IsNullOrEmpty(reportDeptGroupName) || !ClassTypeCodeDic.ContainsKey(s.Class_Type))
                 {
                     error_list.Add(s);
                 }
                 else
                 {
+                    s.Dept_group_name = reportDeptGroupName;
                     clean_list.Add(s);
                 }
             }
+
+            Debug.WriteLine("clean_list count=" + clean_list.Count);
+            Debug.WriteLine("error_list count=" + error_list.Count);
         }
 
         /// <summary>
@@ -134,6 +184,15 @@ namespace myTable
                     deptClassTypeDic[s.Dept_name].Add(s.Class_Type, new List<myStudent>());
                 deptClassTypeDic[s.Dept_name][s.Class_Type].Add(s);
             }
+
+            foreach (string groupName in SupportedDeptGroupNames)
+            {
+                int studentCount = 0;
+                foreach (var g in ByDeptGroup[groupName])
+                    studentCount += g.Value.Count;
+                Debug.WriteLine(groupName + " students=" + studentCount);
+            }
+            Debug.WriteLine("異常資料 students=" + error_list.Count);
         }
 
         //透過Ref_class_id判斷資料中的班級總數（排除空白）
