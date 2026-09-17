@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -33,6 +34,10 @@ namespace myTable
         List<String> AboList; //原住民生清單
         String dept;
         Workbook _wk;
+
+        // 列印效能診斷
+        private StringBuilder _perfLog;
+        private Stopwatch _perfTotalSw;
 
         //Dictionary<string, string> _ClassTypeCodeDic;
 
@@ -335,12 +340,19 @@ namespace myTable
             {
                 try
                 {
+                    BeginPerfLog();
+
+                    Stopwatch sw = Stopwatch.StartNew();
                     // 儲存現在的Setting，供下次使用可直接利用
                     //SaveMappingRecord();
                     SaveMappingXmlRecord();
+                    AppendPerfLog("[1] SaveMappingXmlRecord", sw.ElapsedMilliseconds);
 
+                    sw.Restart();
                     //ReadMappingData();
                     ReadXMLMappingData();
+                    AppendPerfLog("[2] ReadXMLMappingData", sw.ElapsedMilliseconds);
+
                     DataSetting();
                 }
                 catch
@@ -350,6 +362,60 @@ namespace myTable
                     this.linkLabel1.Enabled = true;
                     this.dataGridViewX1.Enabled = true;                    
                     this.comboBoxEx2.Enabled = true;
+                }
+            }
+        }
+
+        private void BeginPerfLog()
+        {
+            _perfLog = new StringBuilder();
+            _perfLog.AppendLine("============================================================");
+            _perfLog.AppendLine("新生入學統計列印開始");
+            _perfLog.AppendLine("SchoolYear=" + comboBoxEx2.Text);
+            _perfTotalSw = Stopwatch.StartNew();
+            Debug.WriteLine(_perfLog.ToString());
+        }
+
+        private void AppendPerfLog(string label, long elapsedMs)
+        {
+            string line = label + ": " + elapsedMs + " ms";
+            if (_perfLog != null)
+                _perfLog.AppendLine(line);
+            Debug.WriteLine(line);
+        }
+
+        private void AppendPerfCount(string label, object value)
+        {
+            string line = label + "=" + value;
+            if (_perfLog != null)
+                _perfLog.AppendLine(line);
+            Debug.WriteLine(line);
+        }
+
+        private void FinishPerfLog(string saveBesidePath)
+        {
+            if (_perfTotalSw != null)
+            {
+                _perfTotalSw.Stop();
+                AppendPerfLog("[17] TOTAL", _perfTotalSw.ElapsedMilliseconds);
+            }
+            if (_perfLog != null)
+            {
+                _perfLog.AppendLine("============================================================");
+                string text = _perfLog.ToString();
+                Debug.WriteLine(text);
+                try
+                {
+                    string path = saveBesidePath;
+                    if (string.IsNullOrEmpty(path))
+                        path = Path.Combine(Path.GetTempPath(), "新生入學統計列印_perf.log");
+                    else
+                        path = Path.ChangeExtension(saveBesidePath, null) + "_perf.log";
+                    File.WriteAllText(path, text, Encoding.UTF8);
+                }
+                catch
+                {
+                    // 效能紀錄寫檔失敗不影響主流程
                 }
             }
         }
@@ -558,13 +624,17 @@ namespace myTable
 
             SaveFileDialog sd = new System.Windows.Forms.SaveFileDialog();
             sd.Title = "另存新檔";
-            sd.FileName = "新生入學方式統計表.xls";
-            sd.Filter = "Excel檔案 (*.xls)|*.xls|所有檔案 (*.*)|*.*";
+            sd.FileName = "新生入學方式統計表.xlsx";
+            sd.Filter = "Excel檔案 (*.xlsx)|*.xlsx|所有檔案 (*.*)|*.*";
             if (sd.ShowDialog() == DialogResult.OK)
             {
                 try
                 {
-                    _wk.Save(sd.FileName);
+                    Stopwatch sw = Stopwatch.StartNew();
+                    _wk.Save(sd.FileName, SaveFormat.Xlsx);
+                    AppendPerfLog("[16] Workbook Save Xlsx", sw.ElapsedMilliseconds);
+                    FinishPerfLog(sd.FileName);
+
                     if (filter.error_list.Count > 0)
                     {
                         MessageBox.Show("發現" + filter.error_list.Count + "筆異常資料未列入統計\r\n詳細資料請確認報表中的[異常資料表]");
@@ -573,16 +643,21 @@ namespace myTable
                 }
                 catch
                 {
+                    FinishPerfLog(null);
                     FISCA.Presentation.Controls.MsgBox.Show("指定路徑無法存取。", "建立檔案失敗", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                     this.Enabled = true;
                     return;
                 }
             }
+            else
+            {
+                FinishPerfLog(null);
+            }
         }
 
         private void _BGWClassStudentAbsenceDetail_DoWork(object sender, DoWorkEventArgs e)
         {
-
+            Stopwatch sw = Stopwatch.StartNew();
             Dictionary<String, myStudent> myDic = new Dictionary<string, myStudent>();
             List<myStudent> mylist = new List<myStudent>();
             QueryHelper _Q = new QueryHelper();
@@ -608,94 +683,124 @@ namespace myTable
 SELECT 
 student.id,student.name,student.gender,student.permanent_address,student.ref_class_id,student.status
 ,student.ref_dept_id as student_ref_dept_id,class.ref_dept_id as class_ref_dept_id 
-,class.class_name,class.grade_year,dept.name as dept_name,tag_student.ref_tag_id 
+,class.class_name,class.grade_year
+,dept.code as dept_code,dept.name as dept_name,dept_group.name as dept_group_name
+,tag_student.ref_tag_id 
 , update_record_info.code
 , TRIM(update_record_info.Class_Type) AS Class_Type
 FROM student 
 left join class on student.ref_class_id=class.id  
 left join dept on  case  when student.ref_dept_id is null   then class.ref_dept_id=dept.id   else student.ref_dept_id=dept.id  end 
+left join dept_group on dept.ref_dept_group_id = dept_group.id
 left join tag_student on student.id= tag_student.ref_student_id 
 left join update_record_info on student.id=update_record_info.ref_student_id 
 WHERE student.status in ('1','4','16') and class.grade_year='1'
-ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
+ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
             sql = string.Format(sql, _SchoolYear);
             DataTable dt = _Q.Select(sql);
+            AppendPerfLog("[3] Main SQL _Q.Select", sw.ElapsedMilliseconds);
+            AppendPerfCount("SQL rows", dt.Rows.Count);
 
-
-            int num = 0;
-            //建立myStuden物件放至List中
+            //建立myStuden物件放至List中（學生層級資料只處理一次；Tag 每列累加）
+            sw.Restart();
             foreach (DataRow row in dt.Rows)
             {
                 String id = row["id"].ToString();
-                String name = row["name"].ToString();
-                String gender = row["gender"].ToString();
-                String ref_class_id = row["ref_class_id"].ToString();
-                String class_name = row["class_name"].ToString();
-                String grade_year = row["grade_year"].ToString();
-                String dept_name = row["dept_name"].ToString();
                 String ref_tag_id = row["ref_tag_id"].ToString();
-                String classType = row["Class_Type"].ToString(); //班別
 
-                //戶籍 縣市
-                String Before_School_Location = "";
-
-
-                // 選取此學生 的前期畢業學校 資訊(用來取得 前學校所在地)
-                K12.Data.BeforeEnrollmentRecord ber = K12.Data.BeforeEnrollment.SelectByStudentID(id);
-
-                if (ber != null)
+                if (!myDic.ContainsKey(id)) //ID當key,不存在才建立學生物件與解析戶籍
                 {
-                    Before_School_Location = ber.SchoolLocation;
+                    String name = row["name"].ToString();
+                    String gender = row["gender"].ToString();
+                    String ref_class_id = row["ref_class_id"].ToString();
+                    String class_name = row["class_name"].ToString();
+                    String grade_year = row["grade_year"].ToString();
+                    String dept_code = row["dept_code"].ToString();
+                    String dept_name = row["dept_name"].ToString();
+                    String dept_group_name = row["dept_group_name"].ToString();
+                    String classType = row["Class_Type"].ToString(); //班別
 
-                }
+                    //戶籍 縣市（BeforeEnrollment 改批次載入後再回填）
+                    String Before_School_Location = "";
+                    String County = "";
+                    string permanent_address = "" + row["permanent_address"];
 
-                System.Xml.Linq.XDocument XD;
-                //戶籍 縣市
-                String County = "";
-                string permanent_address = "" + row["permanent_address"];
-
-                if (permanent_address != "") // 如果戶籍地不是空值
-                {
-                    XD = System.Xml.Linq.XDocument.Parse(permanent_address);
-                    System.Xml.Linq.XElement element = XD.Element("AddressList");
-
-                    if (element.Element("Address") != null)
+                    if (permanent_address != "") // 如果戶籍地不是空值
                     {
-                        if (element.Element("Address").Element("County") != null)
-                        {
-                            County = element.Element("Address").Element("County").Value;
-                        };
-                    };
-                }
-                else
-                {
-                    County = "";
-                }
+                        System.Xml.Linq.XDocument XD = System.Xml.Linq.XDocument.Parse(permanent_address);
+                        System.Xml.Linq.XElement element = XD.Element("AddressList");
 
-                if (!myDic.ContainsKey(id)) //ID當key,不存在就建立
-                {
-                    //{
-                    //    string location = Before_School_Location;
-                    //}
-                    myDic.Add(id, new myStudent(id, name, gender, ref_class_id, class_name, grade_year, dept_name, County, Before_School_Location, classType, new List<string>()));
+                        if (element.Element("Address") != null)
+                        {
+                            if (element.Element("Address").Element("County") != null)
+                            {
+                                County = element.Element("Address").Element("County").Value;
+                            };
+                        };
+                    }
+
+                    myStudent studentObj = new myStudent(id, name, gender, ref_class_id, class_name, grade_year, dept_name, County, Before_School_Location, classType, new List<string>());
+                    studentObj.Dept_code = dept_code;
+                    studentObj.Dept_group_name = dept_group_name;
+                    myDic.Add(id, studentObj);
                 }
                 myDic[id].Tag.Add(ref_tag_id);
-                num++;
             }
+            AppendPerfLog("[4] Build myDic from DataTable", sw.ElapsedMilliseconds);
+            AppendPerfCount("Unique students", myDic.Count);
+
+            // 批次載入前期畢業學校所在地（避免每列 N+1 SelectByStudentID）
+            sw.Restart();
+            List<K12.Data.BeforeEnrollmentRecord> beforeEnrollmentRecords =
+                K12.Data.BeforeEnrollment.SelectByStudentIDs(myDic.Keys.ToList());
+            Dictionary<string, string> beforeSchoolLocationByStudentId = new Dictionary<string, string>();
+            foreach (K12.Data.BeforeEnrollmentRecord ber in beforeEnrollmentRecords)
+            {
+                if (ber == null || string.IsNullOrEmpty(ber.RefStudentID))
+                    continue;
+                if (!beforeSchoolLocationByStudentId.ContainsKey(ber.RefStudentID))
+                    beforeSchoolLocationByStudentId[ber.RefStudentID] = ber.SchoolLocation ?? "";
+            }
+            foreach (KeyValuePair<string, myStudent> kvp in myDic)
+            {
+                string location;
+                if (beforeSchoolLocationByStudentId.TryGetValue(kvp.Key, out location))
+                    kvp.Value.Before_School_Location = location;
+            }
+            AppendPerfLog("[5] BeforeEnrollment loading", sw.ElapsedMilliseconds);
+            AppendPerfCount("BeforeEnrollment count", beforeEnrollmentRecords.Count);
+            AppendPerfCount("BeforeEnrollment batch calls", 1);
 
             //取得新生異動資料清單
+            sw.Restart();
             List<K12.Data.UpdateRecordRecord> records = K12.Data.UpdateRecord.SelectByStudentIDs(myDic.Keys.ToList());
+            AppendPerfLog("[6] UpdateRecord.SelectByStudentIDs", sw.ElapsedMilliseconds);
+            AppendPerfCount("UpdateRecord count", records.Count);
+
+            // 預先建立符合新生條件的學生 ID 集合，避免每位學生都掃描整份異動清單
+            sw.Restart();
+            HashSet<string> validNewStudentIds = new HashSet<string>();
+            foreach (K12.Data.UpdateRecordRecord record in records)
+            {
+                if (record.SchoolYear.ToString() == _SchoolYear && Convert.ToInt16(record.UpdateCode) < 100)
+                    validNewStudentIds.Add(record.StudentID);
+            }
             foreach (KeyValuePair<String, myStudent> kvp in myDic)
             {
-                if (CheckStudentStatus(records, kvp.Key)) //檢查新生異動資料是否符合
+                if (validNewStudentIds.Contains(kvp.Key)) //檢查新生異動資料是否符合
                 {
                     mylist.Add(kvp.Value);  //符合者加入mylist清單
                 }
             }
+            AppendPerfLog("[7] Build mylist / student status filtering", sw.ElapsedMilliseconds);
+            AppendPerfCount("mylist count", mylist.Count);
 
+            sw.Restart();
             filter = new Filter(mylist, dept);
-            Export();
+            AppendPerfLog("[8] new Filter(...)", sw.ElapsedMilliseconds);
+            AppendPerfCount("error_list count", filter.error_list.Count);
 
+            Export();
         }
 
         //確認學生為一般新生,排除重讀生等其他狀態
@@ -736,45 +841,10 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
         //輸出至Excel
         public void Export()
         {
+            Stopwatch sw = Stopwatch.StartNew();
             _wk = new Workbook();
-            Worksheet ws;
-            Cells cs;
-            int index, row;
-            _wk.Worksheets.Add();            
-
-
-            ws = _wk.Worksheets[1];
-            ws.Name = "異常資料表";
-            cs = ws.Cells;
-            cs["A1"].PutValue("系統編號");
-            cs["B1"].PutValue("姓名");
-            cs["C1"].PutValue("性別");
-            //cs["D1"].PutValue("Ref_Class_Id");
-            cs["D1"].PutValue("班級名稱");
-            cs["E1"].PutValue("年級");
-            cs["F1"].PutValue("科別名稱");
-            cs["G1"].PutValue("班別");
-            //cs["H1"].PutValue("ref_tag_id");
-            index = 1;
-            foreach (myStudent s in filter.error_list)
-            {
-                cs[index, 0].PutValue(s.Id);
-                cs[index, 1].PutValue(s.Name);
-                cs[index, 2].PutValue(s.Gender);
-                //cs[index, 3].PutValue(s.Ref_class_id);
-                cs[index, 3].PutValue(s.Class_name);
-                cs[index, 4].PutValue(s.Grade_year);
-                cs[index, 5].PutValue(s.Dept_name);
-                cs[index, 6].PutValue(s.Class_Type);
-                //String column7 = "";
-                //foreach (String l in s.Tag)
-                //{
-                //    column7 += l + ",";
-                //}
-                //cs[index, 7].PutValue(column7);
-                index++;
-            }
-
+            _wk.Open(new MemoryStream(Properties.Resources.新生入學方式統計表_樣板));
+            AppendPerfLog("[9] Export - load workbook template", sw.ElapsedMilliseconds);
 
             #region 1.入學方式 TagID 整理
             //下面共11種入學方式
@@ -1034,39 +1104,94 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
             #endregion
 
 
-            //新生入學方式統計表-- 填值
-            Workbook wk2 = new Workbook();
-            //wk2.Open(new MemoryStream(Properties.Resources.template_105_7_ver_)); //開啟範本文件 // 2017/1/17 穎驊筆記，在此載入105/7 最新版
 
-            //wk2.Open(new MemoryStream(Properties.Resources.template_112_7_ver_)); //開啟範本文件 // 2023/9/22 CT
+            sw.Restart();
+            WriteErrorSheet(_wk.Worksheets["異常資料表"]);
+            AppendPerfLog("[10] WriteErrorSheet", sw.ElapsedMilliseconds);
 
-            wk2.Open(new MemoryStream(Properties.Resources.新生入學方式統計表_樣板)); //開啟範本文件 // 2026/9/15 CT
+            int sheetPerfIndex = 11;
+            foreach (string sheetName in Filter.SupportedDeptGroupNames)
+            {
+                List<KeyValuePair<String, List<myStudent>>> groups = filter.GetSortedGroups(sheetName);
+                int studentCount = 0;
+                foreach (KeyValuePair<String, List<myStudent>> g in groups)
+                    studentCount += g.Value.Count;
 
-            _wk.Worksheets[0].Copy(wk2.Worksheets[0]); //複製範本文件
-            ws = _wk.Worksheets[0];
-            ws.Name = "新生入學方式統計表";
-            cs = ws.Cells;
+                sw.Restart();
+                WriteDepartmentSheet(
+                    _wk.Worksheets[sheetName],
+                    groups,
+                    EnterWayTagsID_Mapping_List,
+                    EnterIdentityTagsID_Mapping_List,
+                    enter_identity_normal_ID_list,
+                    enter_identity_aboriginal_ID_list,
+                    enter_identity_IEP_ID_list,
+                    enter_identity_Other_list,
+                    aboIDList);
+                AppendPerfLog("[" + sheetPerfIndex + "] WriteDepartmentSheet - " + sheetName, sw.ElapsedMilliseconds);
+                AppendPerfCount("  groups", groups.Count);
+                AppendPerfCount("  students", studentCount);
+                sheetPerfIndex++;
+            }
+        }
 
-            index = 12;
-            //todo 
+        private void WriteErrorSheet(Worksheet ws)
+        {
+            Cells cs = ws.Cells;
+            int index = 1;
+            foreach (myStudent s in filter.error_list)
+            {
+                cs[index, 0].PutValue(s.Id);
+                cs[index, 1].PutValue(s.Name);
+                cs[index, 2].PutValue(s.Gender);
+                cs[index, 3].PutValue(s.Class_name);
+                cs[index, 4].PutValue(s.Grade_year);
+                cs[index, 5].PutValue(s.Dept_name);
+                cs[index, 6].PutValue(s.Class_Type);
+                index++;
+            }
+        }
+
+        private void WriteDepartmentSheet(
+            Worksheet ws,
+            List<KeyValuePair<String, List<myStudent>>> groups,
+            List<List<string>> EnterWayTagsID_Mapping_List,
+            List<List<string>> EnterIdentityTagsID_Mapping_List,
+            List<string> enter_identity_normal_ID_list,
+            List<string> enter_identity_aboriginal_ID_list,
+            List<string> enter_identity_IEP_ID_list,
+            List<string> enter_identity_Other_list,
+            List<string> aboIDList)
+        {
+            Cells cs = ws.Cells;
+            int index = 12;
             int col = 10;
+            int flexInsex = 1;
+            List<myStudent> summary = new List<myStudent>();
 
-            int flexInsex = 1; //因為樣板不是每一項都是佔1格 ，有些有二合一合併，所以靠一個參數彈性調整(可以自行 去看 Resource/ template(105.7ver) 內有許多 合併欄位)
-
-            List<myStudent> summary = new List<myStudent>(); //建立summary清單收集dic_byDept的展開學生物件
+            List<string> enter_Way_NoExam_SchoolPromote_ID_list = EnterWayTagsID_Mapping_List[0];
+            List<string> enter_Way_NoExam_School_B1_ID_list = EnterWayTagsID_Mapping_List[1];
+            List<string> enter_Way_NoExam_School_B2_ID_list = EnterWayTagsID_Mapping_List[2];
+            List<string> enter_Way_NoExam_SchoolArea_ID_list = EnterWayTagsID_Mapping_List[3];
+            List<string> enter_Way_NoExam_GoodSkill_ID_list = EnterWayTagsID_Mapping_List[4];
+            List<string> enter_Way_NoExam_NoExam_ID_list = EnterWayTagsID_Mapping_List[5];
+            List<string> enter_Way_NoExam_Other_ID_list = EnterWayTagsID_Mapping_List[6];
+            List<string> enter_Way_SpecialRecuit_ExamAtribute_ID_list = EnterWayTagsID_Mapping_List[7];
+            List<string> enter_Way_SpecialRecuit_Selection_ID_list = EnterWayTagsID_Mapping_List[8];
+            List<string> enter_Way_SafelySet_ID_list = EnterWayTagsID_Mapping_List[9];
+            List<string> enter_Way_Other_ID_list = EnterWayTagsID_Mapping_List[10];
 
             #region 每一科別+班別的整理 
-            //dept_ClassTypeDic //dic_byDept
-            foreach (KeyValuePair<String, List<myStudent>> k in filter.dept_ClassTypeDic)
+            foreach (KeyValuePair<String, List<myStudent>> k in groups)
             {
                 string[] keyArray = k.Key.Split('⊕');
                 col = 10;
                 //Table1 Left
-                cs[index, 1].PutValue(filter.getDeptCode(k.Key)); //科別代碼
-                cs[index, 2].PutValue(keyArray[0]); //科別名稱
-                if (keyArray.Length >= 2)
-                    if (filter.ClassTypeCodeDic.ContainsKey(keyArray[1]))
-                        cs[index, 3].PutValue(filter.ClassTypeCodeDic[keyArray[1]]); //班別名稱
+                cs[index, 1].PutValue(keyArray[0]); //科別代碼
+                cs[index, 2].PutValue(keyArray.Length >= 2 ? keyArray[1] : ""); //科別名稱
+                if (keyArray.Length >= 3)
+                    if (filter.ClassTypeCodeDic.ContainsKey(keyArray[2]))
+                        cs[index, 3].PutValue(filter.ClassTypeCodeDic[keyArray[2]]); //班別名稱
                 cs[index, 6].PutValue(filter.getClassCount(k.Value)); //實際招生班數
                 cs[index, 7].PutValue(k.Value.Count); //學生總計數
                 cs[index, 8].PutValue(filter.getGenderCount(k.Value, "1")); //男生總數
@@ -1351,93 +1476,93 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
                 collect_List.Add(student.Id);
             }
 
+            Dictionary<string, myStudent> summaryById = new Dictionary<string, myStudent>();
+            foreach (myStudent student in summary)
+            {
+                if (!summaryById.ContainsKey(student.Id))
+                    summaryById.Add(student.Id, student);
+            }
+
             // 所有學生的異動資料
             List<K12.Data.UpdateRecordRecord> UpdateRecord_records = K12.Data.UpdateRecord.SelectByStudentIDs(collect_List);
+
+            // 每位學生只計算一次前級畢/修業狀態
+            Dictionary<string, string> studentBeforeStatusMap = new Dictionary<string, string>();
+            foreach (myStudent student in summary)
+            {
+                if (!studentBeforeStatusMap.ContainsKey(student.Id))
+                    studentBeforeStatusMap[student.Id] = CheckStudentBeforeStatus(UpdateRecord_records, student.Id);
+            }
+
+            // 原住民清單與 rec 無關，移出迴圈只算一次
+            List<myStudent> aboStudentlist = filter.getListByTagId(aboIDList, summary);
+            Dictionary<string, myStudent> aboById = new Dictionary<string, myStudent>();
+            foreach (myStudent Ms in aboStudentlist)
+            {
+                if (!aboById.ContainsKey(Ms.Id))
+                    aboById.Add(Ms.Id, Ms);
+            }
 
             //傳入學生ID清單供查詢
             List<SHSchool.Data.SHBeforeEnrollmentRecord> recl = SHSchool.Data.SHBeforeEnrollment.SelectByStudentIDs(collect_List);
             foreach (SHSchool.Data.SHBeforeEnrollmentRecord rec in recl)
             {
-                foreach (myStudent student in summary)
+                myStudent student;
+                if (!summaryById.TryGetValue(rec.RefStudentID, out student))
+                    continue;
+
+                String last_grade_year = rec.GraduateSchoolYear;
+                if (last_grade_year == "") last_grade_year = "0"; //空值填方便後續計算
+
+                int year = Convert.ToInt16(last_grade_year);
+
+                string status;
+                if (!studentBeforeStatusMap.TryGetValue(student.Id, out status))
+                    status = "其他(含領結業證書)";
+
+                if ((year + 1).ToString() == K12.Data.School.DefaultSchoolYear)
                 {
-                    if (rec.RefStudentID == student.Id) //找到對應ID後,判斷前級畢業年度
+                    if (status == "當年畢業")
                     {
-                        String last_grade_year = rec.GraduateSchoolYear;
-                        if (last_grade_year == "") last_grade_year = "0"; //空值填方便後續計算
-
-                        //int year = Convert.ToInt16(last_grade_year) + 1912; //學年度+1912若等於現在年份則判斷為應屆生
-
-                        int year = Convert.ToInt16(last_grade_year);
-
-
-                        if ((year + 1).ToString() == K12.Data.School.DefaultSchoolYear)
-                        {
-                            if (CheckStudentBeforeStatus(UpdateRecord_records, student.Id) == "當年畢業")
-                            {
-                                collect__LastGrade.Add(student);
-                            }
-                            if (CheckStudentBeforeStatus(UpdateRecord_records, student.Id) == "當年修業")
-                            {
-                                collect__LastComplete.Add(student);
-                            }
-                            if (CheckStudentBeforeStatus(UpdateRecord_records, student.Id) == "其他(含領結業證書)")
-                            {
-                                collect__LastOther.Add(student);
-                            }
-
-                            //collect__LastGradeT.Add(student); //收入應屆清單
-                        }
-                        else
-                        {
-                            collect__LastOther.Add(student);
-                            //collect__LastGradeF.Add(student); //收入非應屆清單
-                        }
+                        collect__LastGrade.Add(student);
+                    }
+                    if (status == "當年修業")
+                    {
+                        collect__LastComplete.Add(student);
+                    }
+                    if (status == "其他(含領結業證書)")
+                    {
+                        collect__LastOther.Add(student);
                     }
                 }
-
-                //整理新生中具原住民身分者
-                List<myStudent> aboStudentlist = new List<myStudent>();
-                aboStudentlist = filter.getListByTagId(aboIDList, summary);
-
-
-                foreach (myStudent Ms in aboStudentlist)
+                else
                 {
-                    if (rec.RefStudentID == Ms.Id) //找到對應ID後,判斷前級畢業年度
+                    collect__LastOther.Add(student);
+                }
+
+                myStudent Ms;
+                if (aboById.TryGetValue(rec.RefStudentID, out Ms))
+                {
+                    if ((year + 1).ToString() == K12.Data.School.DefaultSchoolYear)
                     {
-                        String last_grade_year = rec.GraduateSchoolYear;
-                        if (last_grade_year == "") last_grade_year = "0"; //空值填方便後續計算
-
-                        //int year = Convert.ToInt16(last_grade_year) + 1912; //學年度+1912若等於現在年份則判斷為應屆生
-
-                        int year = Convert.ToInt16(last_grade_year);
-
-
-                        if ((year + 1).ToString() == K12.Data.School.DefaultSchoolYear)
+                        if (status == "當年畢業")
                         {
-                            if (CheckStudentBeforeStatus(UpdateRecord_records, Ms.Id) == "當年畢業")
-                            {
-                                collect__abo_LastGrade.Add(Ms);
-                            }
-                            if (CheckStudentBeforeStatus(UpdateRecord_records, Ms.Id) == "當年修業")
-                            {
-                                collect__abo_LastComplete.Add(Ms);
-                            }
-                            if (CheckStudentBeforeStatus(UpdateRecord_records, Ms.Id) == "其他(含領結業證書)")
-                            {
-                                collect__abo_LastOther.Add(Ms);
-                            }
-
-
+                            collect__abo_LastGrade.Add(Ms);
                         }
-                        else
+                        if (status == "當年修業")
+                        {
+                            collect__abo_LastComplete.Add(Ms);
+                        }
+                        if (status == "其他(含領結業證書)")
                         {
                             collect__abo_LastOther.Add(Ms);
-
                         }
                     }
+                    else
+                    {
+                        collect__abo_LastOther.Add(Ms);
+                    }
                 }
-
-
             }
 
 
@@ -1819,6 +1944,8 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
 
             cs["U5"].PutValue(_SchoolYear);
         }
+
+
 
         public void SaveMappingRecord() //儲存上次Mapping紀錄
         {
@@ -2294,10 +2421,21 @@ ORDER BY dept_name, TRIM(update_record_info.Class_Type) ";
         private string getNodeData(string nodeName, XmlElement Element, string nodesName)
         {
             string value = "";
-            foreach (XmlElement xe in Element.SelectNodes(nodesName))
+            if (Element == null)
+                return value;
+
+            XmlNodeList nodes = Element.SelectNodes(nodesName);
+            if (nodes == null)
+                return value;
+
+            foreach (XmlElement xe in nodes)
             {
-                if (xe.SelectSingleNode(nodeName) != null)
-                    value = xe.SelectSingleNode(nodeName).InnerText;
+                if (xe == null)
+                    continue;
+
+                XmlNode node = xe.SelectSingleNode(nodeName);
+                if (node != null)
+                    value = node.InnerText;
             }
             return value;
         }

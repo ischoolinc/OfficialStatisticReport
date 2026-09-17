@@ -15,8 +15,21 @@ namespace myTable
         public Dictionary<String, List<myStudent>> dic_byDept;
         public Dictionary<string, Dictionary<string, List<myStudent>>> deptClassTypeDic;
         public Dictionary<String, List<myStudent>> dept_ClassTypeDic;  //科別_班別
+        /// <summary>
+        /// 依部別(dept_group)分組後，再以 科別代碼⊕科別名稱⊕班別 分組。
+        /// </summary>
+        public Dictionary<String, Dictionary<String, List<myStudent>>> ByDeptGroup;
         Dictionary<String, String> Dept_ref; //科別代碼對照,key=code,value=name;
         public Dictionary<string, string> ClassTypeCodeDic;
+
+        public static readonly string[] SupportedDeptGroupNames = new string[]
+        {
+            "普通科",
+            "專業群科(職業科)",
+            "綜合高中",
+            "實用技能學程",
+            "進修部(學校)"
+        };
 
 
         public Filter(List<myStudent> list, String dept)
@@ -28,6 +41,13 @@ namespace myTable
             QueryDeptCode();
         }
 
+        public static bool IsSupportedDeptGroup(string deptGroupName)
+        {
+            if (string.IsNullOrEmpty(deptGroupName))
+                return false;
+            return SupportedDeptGroupNames.Contains(deptGroupName);
+        }
+
         //清除總資料異常,正確資料放clean_list,錯誤資料放error_list
         private void Cleaner(List<myStudent> list)
         {
@@ -36,7 +56,8 @@ namespace myTable
             foreach (myStudent s in list)
             {
                 //2022-07-13 Cynthia 班別不在對照內，放到錯誤清單
-                if (s.Id == "" || s.Name == "" || (s.Gender != "0" && s.Gender != "1") || s.Ref_class_id == "" || s.Class_name == "" || s.Grade_year == "" || s.Dept_name == "" || !ClassTypeCodeDic.ContainsKey(s.Class_Type))
+                //2026-09-16 部別/科別代碼缺失或部別無法對應報表工作表，放到錯誤清單
+                if (s.Id == "" || s.Name == "" || (s.Gender != "0" && s.Gender != "1") || s.Ref_class_id == "" || s.Class_name == "" || s.Grade_year == "" || s.Dept_name == "" || string.IsNullOrEmpty(s.Dept_code) || !IsSupportedDeptGroup(s.Dept_group_name) || !ClassTypeCodeDic.ContainsKey(s.Class_Type))
                 {
                     error_list.Add(s);
                 }
@@ -68,172 +89,62 @@ namespace myTable
             ClassTypeCodeDic.Add("05", "重點產業班");
             ClassTypeCodeDic.Add("06", "產業人力套案專班");
         }
-        //按科別分類收集,篩選error_list所對應的科別
+
+        //依部別工作表分類，再以科別代碼+科別名稱+班別分組
         private void Classify()
         {
             dic_byDept = new Dictionary<string, List<myStudent>>();
             deptClassTypeDic = new Dictionary<string, Dictionary<string, List<myStudent>>>();
             dept_ClassTypeDic = new Dictionary<string, List<myStudent>>();
-            List<myStudent> new_error_list = new List<myStudent>();
+            ByDeptGroup = new Dictionary<string, Dictionary<string, List<myStudent>>>();
 
-            switch (dept)
+            foreach (string groupName in SupportedDeptGroupNames)
             {
-                case "職業科":
-                    foreach (myStudent s in clean_list)
-                    {
-                        // 不包含實用技能學程(一般班)
-                        if (s.Class_Type == "3")
-                            continue;
+                ByDeptGroup[groupName] = new Dictionary<string, List<myStudent>>();
+            }
 
-                        //科別⊕班別
-                        string key = s.Dept_name + "⊕" + s.Class_Type;
+            foreach (myStudent s in clean_list)
+            {
+                // 科別代碼⊕科別名稱⊕班別
+                string key = s.Dept_code + "⊕" + s.Dept_name + "⊕" + s.Class_Type;
 
-                        if (!s.Dept_name.Contains("普通科") && !s.Dept_name.Contains("綜合高中科"))
-                        {
-                            if (!dic_byDept.ContainsKey(s.Dept_name))
-                            {
-                                dic_byDept.Add(s.Dept_name, new List<myStudent>());
-                            }
-                            dic_byDept[s.Dept_name].Add(s);
+                if (!ByDeptGroup[s.Dept_group_name].ContainsKey(key))
+                {
+                    ByDeptGroup[s.Dept_group_name].Add(key, new List<myStudent>());
+                }
+                ByDeptGroup[s.Dept_group_name][key].Add(s);
 
-                            if (!dept_ClassTypeDic.ContainsKey(key))
-                            {
-                                dept_ClassTypeDic.Add(key, new List<myStudent>());
-                            }
-                            dept_ClassTypeDic[key].Add(s);
-                            #region deptClassTypeDic
-                            if (!deptClassTypeDic.ContainsKey(s.Dept_name))
-                            {
-                                deptClassTypeDic.Add(s.Dept_name, new Dictionary<string, List<myStudent>>());
-                            }
-                            if (!deptClassTypeDic[s.Dept_name].ContainsKey(s.Class_Type))
-                                deptClassTypeDic[s.Dept_name].Add(s.Class_Type, new List<myStudent>());
-                            deptClassTypeDic[s.Dept_name][s.Class_Type].Add(s);
-                            #endregion
+                if (!dic_byDept.ContainsKey(s.Dept_name))
+                {
+                    dic_byDept.Add(s.Dept_name, new List<myStudent>());
+                }
+                dic_byDept[s.Dept_name].Add(s);
 
-                        }
-                    }
+                if (!dept_ClassTypeDic.ContainsKey(key))
+                {
+                    dept_ClassTypeDic.Add(key, new List<myStudent>());
+                }
+                dept_ClassTypeDic[key].Add(s);
 
-                    foreach (myStudent s in error_list)
-                    {
-                        // 不包含實用技能學程(一般班)
-                        if (s.Class_Type == "3")
-                            continue;
-
-                        if (!s.Dept_name.Contains("普通科") && !s.Dept_name.Contains("綜合高中科"))
-                        {
-                            new_error_list.Add(s);
-                        }
-                    }
-
-                    error_list = new_error_list;
-
-                    break;
-
-                case "實用技能學程":
-                    foreach (myStudent s in clean_list)
-                    {
-                        // 實用技能學程(一般班)
-                        if (s.Class_Type == "3")
-                        {
-                            //科別⊕班別
-                            string key = s.Dept_name + "⊕" + s.Class_Type;
-
-                            if (!s.Dept_name.Contains("普通科") && !s.Dept_name.Contains("綜合高中科"))
-                            {
-                                if (!dic_byDept.ContainsKey(s.Dept_name))
-                                {
-                                    dic_byDept.Add(s.Dept_name, new List<myStudent>());
-                                }
-                                dic_byDept[s.Dept_name].Add(s);
-
-                                if (!dept_ClassTypeDic.ContainsKey(key))
-                                {
-                                    dept_ClassTypeDic.Add(key, new List<myStudent>());
-                                }
-                                dept_ClassTypeDic[key].Add(s);
-                                #region deptClassTypeDic
-                                if (!deptClassTypeDic.ContainsKey(s.Dept_name))
-                                {
-                                    deptClassTypeDic.Add(s.Dept_name, new Dictionary<string, List<myStudent>>());
-                                }
-                                if (!deptClassTypeDic[s.Dept_name].ContainsKey(s.Class_Type))
-                                    deptClassTypeDic[s.Dept_name].Add(s.Class_Type, new List<myStudent>());
-                                deptClassTypeDic[s.Dept_name][s.Class_Type].Add(s);
-                                #endregion
-
-                            }
-
-                        }
-                    }
-
-                    foreach (myStudent s in error_list)
-                    {
-                        // 不包含實用技能學程(一般班)
-                        if (s.Class_Type == "3")
-                        {
-                            if (!s.Dept_name.Contains("普通科") && !s.Dept_name.Contains("綜合高中科"))
-                            {
-                                new_error_list.Add(s);
-                            }
-                        }                        
-                    }
-
-                    error_list = new_error_list;
-
-                    break;
-
-                default:
-                    foreach (myStudent s in clean_list)
-                    {
-                        // 不包含實用技能學程(一般班)
-                        if (s.Class_Type == "3")
-                            continue;
-
-                        //科別⊕班別
-                        string key = s.Dept_name + "⊕" + s.Class_Type;
-
-                        if (!dic_byDept.ContainsKey(dept))
-                        {
-                            dic_byDept.Add(dept, new List<myStudent>());
-                        }
-                        if (!dept_ClassTypeDic.ContainsKey(key) && s.Dept_name.Contains(dept))
-                        {
-                            dept_ClassTypeDic.Add(key, new List<myStudent>());
-                        }
-
-                        if (s.Dept_name.Contains(dept))
-                        {
-                            dept_ClassTypeDic[key].Add(s);
-                            dic_byDept[dept].Add(s);
-                        }
-
-                    }
-
-                    foreach (myStudent s in error_list)
-                    {
-                        // 不包含實用技能學程(一般班)
-                        if (s.Class_Type == "3")
-                            continue;
-
-                        if (s.Dept_name.Contains(dept))
-                        {
-                            new_error_list.Add(s);
-                        }
-                    }
-
-                    error_list = new_error_list;
-
-                    break;
+                if (!deptClassTypeDic.ContainsKey(s.Dept_name))
+                {
+                    deptClassTypeDic.Add(s.Dept_name, new Dictionary<string, List<myStudent>>());
+                }
+                if (!deptClassTypeDic[s.Dept_name].ContainsKey(s.Class_Type))
+                    deptClassTypeDic[s.Dept_name].Add(s.Class_Type, new List<myStudent>());
+                deptClassTypeDic[s.Dept_name][s.Class_Type].Add(s);
             }
         }
 
-        //透過Ref_class_id判斷資料中的班級總數
+        //透過Ref_class_id判斷資料中的班級總數（排除空白）
         public int getClassCount(List<myStudent> list)
         {
             Dictionary<string, List<myStudent>> dic_byClass = new Dictionary<string, List<myStudent>>();
             foreach (myStudent s in list)
             {
+                if (string.IsNullOrEmpty(s.Ref_class_id))
+                    continue;
+
                 if (!dic_byClass.ContainsKey(s.Ref_class_id))
                 {
                     dic_byClass.Add(s.Ref_class_id, new List<myStudent>());
@@ -305,10 +216,29 @@ namespace myTable
             }
             return code;
         }
+
+        /// <summary>
+        /// 取得指定部別工作表內，依科別代碼排序後的分組清單。
+        /// </summary>
+        public List<KeyValuePair<String, List<myStudent>>> GetSortedGroups(string deptGroupName)
+        {
+            if (ByDeptGroup == null || !ByDeptGroup.ContainsKey(deptGroupName))
+                return new List<KeyValuePair<String, List<myStudent>>>();
+
+            return ByDeptGroup[deptGroupName]
+                .OrderBy(g =>
+                {
+                    string code = g.Key.Split('⊕')[0];
+                    int n;
+                    return int.TryParse(code, out n) ? n : int.MaxValue;
+                })
+                .ThenBy(g => g.Key.Split('⊕')[0], StringComparer.Ordinal)
+                .ThenBy(g =>
+                {
+                    string[] parts = g.Key.Split('⊕');
+                    return parts.Length >= 3 ? parts[2] : "";
+                }, StringComparer.Ordinal)
+                .ToList();
+        }
     }
 }
-
-
-
-
-
