@@ -16,6 +16,7 @@ using System.Windows.Forms;
 using System.Xml;
 using K12.Data.Configuration;
 
+
 namespace myTable
 {
     public partial class Form2 : BaseForm
@@ -1571,10 +1572,8 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
 
             #region 按戶籍地分
             // 新樣板位置：Excel row 40~41（Aspose 39~40）；舊樣板為 Excel 43~44（Aspose 42~43）
-            XmlElement Element = null;
-            //XmlElement Element = Config.GetSchoolInfo();
 
-            string LocalCounty = getNodeData("County", Element, "SchoolInformation");
+            string LocalCounty = GetSchoolCounty();
 
             foreach (myStudent student in summary)
             {
@@ -1869,6 +1868,51 @@ ORDER BY dept.code, TRIM(update_record_info.Class_Type) ";
             #endregion
 
             cs["U5"].PutValue(_SchoolYear);
+        }
+
+        /// <summary>
+        /// 從 list 資料表「學校資訊」XML 取得學校所在地縣市（&lt;County&gt;）。
+        /// 查無資料、空值或解析失敗時回傳空字串，不中斷報表流程。
+        /// </summary>
+        private string GetSchoolCounty()
+        {
+            string county = "";
+
+            try
+            {
+                QueryHelper q = new QueryHelper();
+                DataTable dt = q.Select(@"
+SELECT content
+FROM list
+WHERE name = '學校資訊'
+LIMIT 1
+");
+
+                if (dt == null || dt.Rows.Count == 0)
+                    return county;
+
+                string content = ("" + dt.Rows[0]["content"]).Trim();
+                if (string.IsNullOrEmpty(content))
+                    return county;
+
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(content);
+
+                XmlNode countyNode =
+                    doc.SelectSingleNode("/SchoolInformation/County");
+
+                if (countyNode == null)
+                    return county;
+
+                county = countyNode.InnerText.Trim();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("取得學校所在地縣市失敗：" + ex.Message);
+                county = "";
+            }
+
+            return county;
         }
 
         private string BuildGovApprovedKey(
