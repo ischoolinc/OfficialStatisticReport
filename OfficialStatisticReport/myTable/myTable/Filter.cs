@@ -69,6 +69,7 @@ namespace myTable
                     return "專業群科(職業科)";
 
                 case "綜合高中":
+                case "綜合型高中":
                     return "綜合高中";
 
                 case "實用技能學程":
