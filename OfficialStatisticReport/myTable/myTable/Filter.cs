@@ -73,9 +73,12 @@ namespace myTable
                     return "綜合高中";
 
                 case "實用技能學程":
+                case "實用技能學程(日)":
+                case "實用技能學程(夜)":
                     return "實用技能學程";
 
                 case "進修部(學校)":
+                case "進修部":
                     return "進修部(學校)";
 
                 default:
